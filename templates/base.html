@@ -5,7 +5,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Bootstrap-Flask Demo Application</title>
+    <title>Laguz Investment</title>
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
     {{ bootstrap.load_css() }}
     <style>
@@ -30,12 +30,6 @@
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav mr-auto">
                 {{ render_nav_item('index', 'Home', use_li=True) }}
-                {{ render_nav_item('test_form', 'Summary', use_li=True) }}
-                {{ render_nav_item('test_nav', 'Valuation', use_li=True) }}
-                {{ render_nav_item('test_pagination', 'Management', use_li=True) }}
-                {{ render_nav_item('test_flash', 'Fin. Strength', use_li=True) }}
-                {{ render_nav_item('test_table', 'Economic Moat', use_li=True) }}
-                {{ render_nav_item('test_icon', 'Dividends & Buybacks', use_li=True) }}
             </ul>
         </div>
     </nav>
