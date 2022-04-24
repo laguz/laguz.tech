@@ -6,7 +6,7 @@ app.secret_key = 'LAGUZ'
 
 @app.route('/')
 def index():
-    return 'Luis Alberto Guzman Zorrilla.'
+    return render_template('index.html')
 
 
 if __name__ == '__main__':
