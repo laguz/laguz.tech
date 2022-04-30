@@ -1,4 +1,5 @@
 Flask
-Bootstrap-Flask
-Flask-SQLAlchemy
 Flask-WTF
+datetime
+pymongo
+json
