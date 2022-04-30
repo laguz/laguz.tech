@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask import Flask, render_template, request, flash, Markup, jsonify
+from flask import Flask, render_template, request, flash, Markup, jsonify, redirect, url_for
 
 app = Flask(__name__)
 app.secret_key = 'LAGUZ'
