@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from flask import Flask, render_template, request, flash, Markup, jsonify, redirect, url_for
+import database
 
 app = Flask(__name__)
 app.secret_key = 'LAGUZ'
