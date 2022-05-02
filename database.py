@@ -1,1 +1,0 @@
-uri = 'mongodb://laguz:Alberto%40316@98.254.107.12:5060/?authSource=admin&readPreference=primary&appname=MongoDB%20Compass&directConnection=true&ssl=false'
