@@ -2,6 +2,6 @@ Flask
 Flask-WTF
 datetime
 pymongo
-json
+json2
 os
 python-dotenv
