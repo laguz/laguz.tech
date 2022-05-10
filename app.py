@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 from flask import Flask, render_template, request, flash, Markup, jsonify, redirect, url_for
-import env
+import pymongo
+from pymongo import MongoClient
+import numpy as np
+import pandas as pd
 
 #Database
-client = MongoClient(uri)
+#client = MongoClient(uri)
 
 app = Flask(__name__)
 app.secret_key = 'LAGUZ'
