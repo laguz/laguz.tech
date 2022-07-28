@@ -1,27 +1,44 @@
 {% extends 'base.html' %}
 
-{% block main %}
+{% block content %}
+  <nav class="navbar navbar-expand-sm bg-light">
+    <div class="container-fluid">
+      <ul class="navbar-nav">
+        <li class="nav-item">
+          <a class="nav-link" href="#">Link1</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">Link2</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">Link3</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
 
-<div class="mdc-component__containers">
-  <h1 class="content" style="text-align: center;">
-    Trading Bot laguz.tech
-  </h1>
+<div class="container-fluid p-5 bg-primary text-white text-center">
+  <h1>Laguz Tech Investment</h1>
+  <p>We use Machine Learning(ML) and a propertary drading system to imporove markets returs.</p> 
 </div>
-
-<div class="mdc-card demo-card undefined">
-  <div class="demo-card__primary">
-      <h1 class="demo-card__title mdc-typography--headline6">Lourdes Antonia Guzman Rodriguez</h1>
-      <div class="mdc-card__actions">
-          <div class="mdc-card__action-buttons">
-              <button class="mdc-button mdc-card__action mdc-card__action--button mdc-button--raised mdc-ripple-upgraded">
-                  Button 1
-              </button>
-              <button class="mdc-button mdc-card__action mdc-card__action--button mdc-button--raised mdc-ripple-upgraded">
-                  Button 2
-              </button>
-          </div>
-      </div>
+  
+<div class="container mt-5">
+  <div class="row">
+    <div class="col-sm-4">
+      <h3>Column 1</h3>
+      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit...</p>
+      <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris...</p>
+    </div>
+    <div class="col-sm-4">
+      <h3>Column 2</h3>
+      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit...</p>
+      <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris...</p>
+    </div>
+    <div class="col-sm-4">
+      <h3>Column 3</h3>        
+      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit...</p>
+      <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris...</p>
+    </div>
   </div>
 </div>
-
-{% endblock %}
+{% endblock content %}
