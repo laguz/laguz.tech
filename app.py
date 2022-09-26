@@ -7,6 +7,9 @@ import numpy as np
 import pandas as pd
 from dotenv import load_dotenv, find_dotenv
 
+#This a test for the local import
+#from model import TDSession
+
 #Database
 load_dotenv(find_dotenv())
 uri = os.environ.get("URI")
