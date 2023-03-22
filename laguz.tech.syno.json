@@ -1,0 +1,78 @@
+{
+   "CapAdd" : null,
+   "CapDrop" : null,
+   "cmd" : "python main.py",
+   "cpu_priority" : 0,
+   "enable_publish_all_ports" : false,
+   "enable_restart_policy" : false,
+   "enable_service_portal" : true,
+   "enabled" : true,
+   "env_variables" : [
+      {
+         "key" : "PATH",
+         "value" : "/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+      },
+      {
+         "key" : "LANG",
+         "value" : "C.UTF-8"
+      },
+      {
+         "key" : "GPG_KEY",
+         "value" : "0D96DF4D4110E5C43FBFB17F2D347EA6AA65421D"
+      },
+      {
+         "key" : "PYTHON_VERSION",
+         "value" : "3.7.1"
+      },
+      {
+         "key" : "PYTHON_PIP_VERSION",
+         "value" : "18.1"
+      }
+   ],
+   "exporting" : false,
+   "id" : "5f8ca2afb0ad9d72d33e283eb3cec08894bc5c335b3aa0dc5d24b8ba1c1e534d",
+   "image" : "jcdemo/flaskapp:latest",
+   "is_ddsm" : false,
+   "is_package" : false,
+   "links" : [],
+   "memory_limit" : 0,
+   "name" : "laguz.tech",
+   "network" : [
+      {
+         "driver" : "bridge",
+         "name" : "bridge"
+      }
+   ],
+   "network_mode" : "bridge",
+   "port_bindings" : [],
+   "privileged" : false,
+   "service_portals" : [
+      {
+         "port" : "5000",
+         "protocol" : "http"
+      }
+   ],
+   "services" : [
+      {
+         "display_name" : "Docker laguz.tech 5000",
+         "id" : "Docker-5f8ca2afb0ad9d72d33e283eb3cec08894bc5c335b3aa0dc5d24b8ba1c1e534d-5000",
+         "proxy_target" : "http://172.17.0.2:5000",
+         "service" : "Docker-5f8ca2afb0ad9d72d33e283eb3cec08894bc5c335b3aa0dc5d24b8ba1c1e534d-5000",
+         "type" : "reverse_proxy"
+      }
+   ],
+   "shortcut" : {
+      "enable_shortcut" : false,
+      "enable_status_page" : false,
+      "enable_web_page" : false,
+      "web_page_url" : ""
+   },
+   "use_host_network" : false,
+   "volume_bindings" : [
+      {
+         "host_volume_file" : "/homes/laguz/Drive/web/laguz.tech",
+         "mount_point" : "/app/",
+         "type" : "rw"
+      }
+   ]
+}
