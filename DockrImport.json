@@ -18,20 +18,40 @@
       },
       {
          "key" : "GPG_KEY",
-         "value" : "0D96DF4D4110E5C43FBFB17F2D347EA6AA65421D"
+         "value" : "E3FF2839C048B25C084DEBE9B26995E310250568"
       },
       {
          "key" : "PYTHON_VERSION",
-         "value" : "3.7.1"
+         "value" : "3.8.13"
       },
       {
          "key" : "PYTHON_PIP_VERSION",
-         "value" : "18.1"
+         "value" : "22.0.4"
+      },
+      {
+         "key" : "PYTHON_SETUPTOOLS_VERSION",
+         "value" : "57.5.0"
+      },
+      {
+         "key" : "PYTHON_GET_PIP_URL",
+         "value" : "https://github.com/pypa/get-pip/raw/38e54e5de07c66e875c11a1ebbdb938854625dd8/public/get-pip.py"
+      },
+      {
+         "key" : "PYTHON_GET_PIP_SHA256",
+         "value" : "e235c437e5c7d7524fbce3880ca39b917a73dc565e0c813465b7a7a329bb279a"
+      },
+      {
+         "key" : "PYTHONDONTWRITEBYTECODE",
+         "value" : "1"
+      },
+      {
+         "key" : "PYTHONUNBUFFERED",
+         "value" : "1"
       }
    ],
    "exporting" : false,
-   "id" : "5f8ca2afb0ad9d72d33e283eb3cec08894bc5c335b3aa0dc5d24b8ba1c1e534d",
-   "image" : "jcdemo/flaskapp:latest",
+   "id" : "4d84447705f1ddbca07fc2db496085e06b6247a28abc761c80901b4a97b6521d",
+   "image" : "laguz3/laguz.tech:latest",
    "is_ddsm" : false,
    "is_package" : false,
    "links" : [],
@@ -55,9 +75,9 @@
    "services" : [
       {
          "display_name" : "Docker laguz.tech 5000",
-         "id" : "Docker-5f8ca2afb0ad9d72d33e283eb3cec08894bc5c335b3aa0dc5d24b8ba1c1e534d-5000",
+         "id" : "Docker-4d84447705f1ddbca07fc2db496085e06b6247a28abc761c80901b4a97b6521d-5000",
          "proxy_target" : "http://172.17.0.2:5000",
-         "service" : "Docker-5f8ca2afb0ad9d72d33e283eb3cec08894bc5c335b3aa0dc5d24b8ba1c1e534d-5000",
+         "service" : "Docker-4d84447705f1ddbca07fc2db496085e06b6247a28abc761c80901b4a97b6521d-5000",
          "type" : "reverse_proxy"
       }
    ],
