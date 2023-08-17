@@ -1,27 +1,15 @@
-# -*- coding: utf-8 -*-
+# Create a new session, credentials path is required.
 import os
-from flask import Flask, render_template, request, flash, Markup, jsonify, redirect, url_for
-import pymongo
-from pymongo import MongoClient
-import numpy as np
-import pandas as pd
 from dotenv import load_dotenv, find_dotenv
-
-#This a test for the local import
-#from model import TDSession
-
-#Database
+from td.client import TDClient
 load_dotenv(find_dotenv())
-uri = os.environ.get("URI")
-client = MongoClient(uri)
-db_Option = client.Options
+client_id = os.environ.get("client_id")
 
-app = Flask(__name__)
-app.secret_key = 'LAGUZ'
+TDSession = TDClient(
+    client_id,
+    redirect_uri='http://localhost',
+    credentials_path='/content/credentials.json'
+)
 
-@app.route('/')
-def index():
-    return "Luis Guzman"
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, threaded=True, debug=True)
+# Login to the session
+TDSession.login()
