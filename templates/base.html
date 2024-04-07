@@ -1,24 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Laguz Investments</title>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9" crossorigin="anonymous">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Material Components for the Web Landing Page</title>
+  <!-- Import Material Components for the Web CSS -->
+  <link href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css" rel="stylesheet">
+  <!-- Import Material Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <!-- Custom CSS -->
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+    }
+
+    .landing-page {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+
+    .landing-page h1 {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .landing-page p {
+      font-size: 1.2rem;
+      margin-bottom: 2rem;
+    }
+
+    .landing-page .btn {
+      margin-top: 1rem;
+    }
+  </style>
 </head>
-
 <body>
-  <nav class="navbar navbar-expand-sm bg-light">
-    <div class="container-fluid">
-      <ul class="navbar-nav">
-        <li class="nav-item">
-          <a class="nav-link" href="#">Main Dashboard</a>
-        </li>
-      </ul>
-    </div>
-  </nav>
-  {% block content %}{% endblock %}
-</body>
+  
+  <div class="landing-page">
+    <h1>Welcome to Material Components for the Web</h1>
+    <p>This is a simple landing page example using Material Components for the Web.</p>
+    <a href="#" class="mdc-button mdc-button--raised btn">Get Started</a>
+  </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-HwwvtgBNo3bZJJLYd8oVXjrBZt8cqVSpeBNS5n7C8IVInixGAoxmnlMuBnhbgrkm" crossorigin="anonymous"></script>
+  <!-- Import Material Components for the Web JS -->
+  <script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
+  <!-- Initialize Material Components for the Web -->
+  <script>
+    // Initialize buttons
+    const buttons = document.querySelectorAll('.mdc-button');
+    for (const button of buttons) {
+      mdc.ripple.MDCRipple.attachTo(button);
+    }
+  </script>
+
+</body>
 </html>
