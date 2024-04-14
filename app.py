@@ -11,7 +11,7 @@ from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 uri = os.environ.get("URI")
 client = MongoClient(uri)
-db_Option = client.Options
+db_Option = client.Stocks
 
 app = Flask(__name__)
 app.secret_key = 'LAGUZ'
