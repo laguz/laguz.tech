@@ -18,6 +18,16 @@ app.secret_key = 'LAGUZ'
 
 @app.route('/')
 def index():
+    """
+    Route to render the index.html template.
+
+    This function is responsible for handling the '/' route. It returns the rendered
+    'index.html' template.
+
+    Returns:
+        The rendered 'index.html' template.
+    """
+    # Render the 'index.html' template and return it
     return render_template('index.html')
 
 
