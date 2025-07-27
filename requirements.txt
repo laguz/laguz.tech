@@ -5,4 +5,6 @@ pymongo
 python-dotenv
 pandas
 numpy
-td-ameritrade-python-api
+json
+requests
+os
