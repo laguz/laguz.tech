@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-from flask import Flask, render_template, request, flash, Markup, jsonify, redirect, url_for
+from flask import Flask, render_template, request, flash, jsonify, redirect, url_for
 import pymongo
 from pymongo import MongoClient
 import numpy as np
