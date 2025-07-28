@@ -12,4 +12,4 @@ def dashboard():
     return render_template('dashboard.html', trades=trades, total_pnl=total_pnl)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, threaded=True, debug=True)
