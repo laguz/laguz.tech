@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Place Trade{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Place a New Trade</h1>
+
+<div class="card mb-4">
+    <div class="card-header">
+        Trade Order Form
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('trade') }}">
+            <div class="mb-3">
+                <label for="order_class" class="form-label">Order Class:</label>
+                <select class="form-select" id="order_class" name="order_class" required>
+                    <option value="equity">Equity</option>
+                    <option value="option">Option</option>
+                    </select>
+            </div>
+            <div class="mb-3">
+                <label for="symbol" class="form-label">Symbol (e.g., AAPL):</label>
+                <input type="text" class="form-control" id="symbol" name="symbol" required>
+            </div>
+            <div class="mb-3" id="option_symbol_group" style="display: none;">
+                <label for="option_symbol" class="form-label">Option Symbol (OCC format, e.g., AAPL250718C00195000):</label>
+                <input type="text" class="form-control" id="option_symbol" name="option_symbol">
+                <small class="form-text text-muted">Required for option orders. Format: SYYYMMDD[C/P]XXXXXXX (e.g., AAPL250718C00195000)</small>
+            </div>
+            <div class="mb-3">
+                <label for="side" class="form-label">Side:</label>
+                <select class="form-select" id="side" name="side" required>
+                    <option value="buy">Buy</option>
+                    <option value="sell">Sell</option>
+                    <option value="buy_to_cover">Buy to Cover</option>
+                    <option value="sell_short">Sell Short</option>
+                    <option value="buy_to_open">Buy to Open (Option)</option>
+                    <option value="buy_to_close">Buy to Close (Option)</option>
+                    <option value="sell_to_open">Sell to Open (Option)</option>
+                    <option value="sell_to_close">Sell to Close (Option)</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="quantity" class="form-label">Quantity:</label>
+                <input type="number" class="form-control" id="quantity" name="quantity" min="1" required>
+            </div>
+            <div class="mb-3">
+                <label for="order_type" class="form-label">Order Type:</label>
+                <select class="form-select" id="order_type" name="order_type" required>
+                    <option value="market">Market</option>
+                    <option value="limit">Limit</option>
+                    <option value="stop">Stop</option>
+                    <option value="stop_limit">Stop Limit</option>
+                </select>
+            </div>
+            <div class="mb-3" id="price_group">
+                <label for="price" class="form-label">Price (for Limit/Stop orders):</label>
+                <input type="number" step="0.01" class="form-control" id="price" name="price">
+            </div>
+            <div class="mb-3">
+                <label for="duration" class="form-label">Duration:</label>
+                <select class="form-select" id="duration" name="duration" required>
+                    <option value="day">Day</option>
+                    <option value="gtc">GTC (Good Till Cancel)</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-success">Place Order</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const orderClassSelect = document.getElementById('order_class');
+        const optionSymbolGroup = document.getElementById('option_symbol_group');
+        const orderTypeSelect = document.getElementById('order_type');
+        const priceGroup = document.getElementById('price_group');
+
+        function toggleOptionSymbolField() {
+            if (orderClassSelect.value === 'option') {
+                optionSymbolGroup.style.display = 'block';
+                document.getElementById('option_symbol').setAttribute('required', 'required');
+            } else {
+                optionSymbolGroup.style.display = 'none';
+                document.getElementById('option_symbol').removeAttribute('required');
+            }
+        }
+
+        function togglePriceField() {
+            if (orderTypeSelect.value === 'market') {
+                priceGroup.style.display = 'none';
+                document.getElementById('price').removeAttribute('required');
+            } else {
+                priceGroup.style.display = 'block';
+                document.getElementById('price').setAttribute('required', 'required');
+            }
+        }
+
+        orderClassSelect.addEventListener('change', toggleOptionSymbolField);
+        orderTypeSelect.addEventListener('change', togglePriceField);
+
+        // Initial call on page load
+        toggleOptionSymbolField();
+        togglePriceField();
+    });
+</script>
+{% endblock %}

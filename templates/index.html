@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Home{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Trading Dashboard</h1>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>Account Balances</h3>
+            </div>
+            <div class="card-body">
+                {% if balances %}
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><strong>Cash:</strong> ${{ "%.2f"|format(balances.cash) }}</li>
+                    <li class="list-group-item"><strong>Buying Power:</strong> ${{ "%.2f"|format(balances.buying_power) }}</li>
+                    <li class="list-group-item"><strong>Option Buying Power:</strong> ${{ "%.2f"|format(balances.option_buying_power) }}</li>
+                    <li class="list-group-item"><strong>Total Equity:</strong> ${{ "%.2f"|format(balances.equity) }}</li>
+                    <li class="list-group-item"><strong>Uncleared Deposits:</strong> ${{ "%.2f"|format(balances.uncleared_funds) }}</li>
+                </ul>
+                {% else %}
+                <p>Could not load account balances.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>Market Overview (Top Symbols)</h3>
+            </div>
+            <div class="card-body">
+                {% if quotes %}
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Symbol</th>
+                            <th>Last</th>
+                            <th>Change (%)</th>
+                            <th>Volume</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for quote in quotes %}
+                        <tr>
+                            <td>{{ quote.symbol }}</td>
+                            <td>${{ "%.2f"|format(quote.last) }}</td>
+                            <td class="{% if quote.change_percentage > 0 %}text-success{% elif quote.change_percentage < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                {{ "%.2f"|format(quote.change_percentage) }}%
+                            </td>
+                            <td>{{ "{:,}".format(quote.volume) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p>Could not load market data.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>Current Positions</h3>
+            </div>
+            <div class="card-body">
+                {% if positions %}
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Symbol</th>
+                            <th>Quantity</th>
+                            <th>Cost Basis</th>
+                            <th>Current Price</th>
+                            <th>Market Value</th>
+                            <th>Gain/Loss ($)</th>
+                            <th>Gain/Loss (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for position in positions %}
+                        {% set current_price = position.last_day_price or position.mark %} {# Use last_day_price if available, else mark #}
+                        {% set market_value = current_price * position.quantity %}
+                        {% set gain_loss_usd = market_value - position.cost_basis %}
+                        {% set gain_loss_percent = (gain_loss_usd / position.cost_basis * 100) if position.cost_basis else 0 %}
+                        <tr>
+                            <td>{{ position.symbol }}</td>
+                            <td>{{ position.quantity }}</td>
+                            <td>${{ "%.2f"|format(position.cost_basis) }}</td>
+                            <td>${{ "%.2f"|format(current_price) }}</td>
+                            <td>${{ "%.2f"|format(market_value) }}</td>
+                            <td class="{% if gain_loss_usd > 0 %}text-success{% elif gain_loss_usd < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                ${{ "%.2f"|format(gain_loss_usd) }}
+                            </td>
+                            <td class="{% if gain_loss_percent > 0 %}text-success{% elif gain_loss_percent < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                {{ "%.2f"|format(gain_loss_percent) }}%
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p>No current positions.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

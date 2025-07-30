@@ -1,0 +1,3 @@
+/* Add any custom styles here to override or extend Bootstrap */
+.text-success { color: #198754 !important; } /* Ensure Bootstrap green */
+.text-danger { color: #dc3545 !important; } /* Ensure Bootstrap red */
