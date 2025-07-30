@@ -1,5 +1,6 @@
 Flask
 Flask-WTF
+flask_login
 datetime
 pymongo
 python-dotenv

@@ -2,18 +2,78 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from config import Config
 from tradier_api import TradierAPI
 import datetime
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 
 app = Flask(__name__)
 app.config.from_object(Config)
-app.secret_key = 'your_secret_key' # Change this to a strong, random key!
+app.secret_key = 'your_super_secret_key_here_please_change_this_seriously' # IMPORTANT: Change this to a strong, random key!
+
+# Flask-Login setup
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login' # The view function for login
+
+# Dummy User class (for demonstration only - in a real app, use a database)
+class User(UserMixin):
+    def __init__(self, id, username, password):
+        self.id = id
+        self.username = username
+        self.password = password # In real apps, store hashed passwords
+
+    def get_id(self):
+        return str(self.id)
+
+# Hardcoded users for demonstration
+# In a real application, fetch from a database and use hashed passwords
+USERS = {
+    "demo": User(1, "demo", "password123"),
+    "trader": User(2, "trader", "securepassword")
+}
+
+@login_manager.user_loader
+def load_user(user_id):
+    """
+    Given 'user_id', return the User object.
+    """
+    for user in USERS.values():
+        if user.id == int(user_id):
+            return user
+    return None
 
 tradier_api = TradierAPI()
 
 # Dummy account ID for testing (replace with actual account ID or dynamic lookup)
-# For a real application, you'd integrate Tradier's OAuth flow to get the user's account ID.
-TRADIER_ACCOUNT_ID = "VAYOURACCID" # Replace with your Tradier paper or live account ID
+TRADIER_ACCOUNT_ID = "VA65088995" # <<< REPLACE WITH YOUR TRADIER ACCOUNT ID HERE >>>
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        user = USERS.get(username)
+        if user and user.password == password: # In real app: check hashed password
+            login_user(user)
+            flash('Logged in successfully.', 'success')
+            next_page = request.args.get('next')
+            return redirect(next_page or url_for('index'))
+        else:
+            flash('Invalid username or password.', 'danger')
+    return render_template('login.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('You have been logged out.', 'info')
+    return redirect(url_for('login'))
+
 
 @app.route('/')
+@login_required # Protect this route
 def index():
     # Fetch some default market data or portfolio overview
     symbols = ['SPY', 'AAPL', 'MSFT', 'GOOGL']
@@ -31,9 +91,11 @@ def index():
     return render_template('index.html',
                            quotes=quotes,
                            balances=balances,
-                           positions=positions)
+                           positions=positions,
+                           current_user=current_user) # Pass current_user to template
 
 @app.route('/market_data', methods=['GET', 'POST'])
+@login_required # Protect this route
 def market_data():
     symbol_to_fetch = ''
     quotes = None
@@ -79,6 +141,7 @@ def market_data():
                            expirations=expirations)
 
 @app.route('/trade', methods=['GET', 'POST'])
+@login_required # Protect this route
 def trade():
     if request.method == 'POST':
         symbol = request.form.get('symbol').upper()
@@ -124,6 +187,7 @@ def trade():
     return render_template('trade.html')
 
 @app.route('/portfolio')
+@login_required # Protect this route
 def portfolio():
     # Fetch account balances
     balances_data = tradier_api.get_balances(TRADIER_ACCOUNT_ID)
