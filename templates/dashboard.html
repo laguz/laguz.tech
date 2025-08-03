@@ -2,14 +2,169 @@
 
 {% block title %}Dashboard{% endblock %}
 
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8 col-lg-7">
-        <div class="card p-4 text-center">
-            <h2 class="card-title mb-4">Welcome to your Dashboard, {{ username }}!</h2>
-            <p class="lead">This is a protected page, accessible only after successful login.</p>
-            <a href="{{ url_for('logout') }}" class="btn btn-danger mt-3">Logout</a>
+<h2 class="mb-4">Welcome, {{ current_user.username }}! Your Trading Dashboard</h2>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-center bg-info text-white shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Total Equity</h5>
+                <p class="card-text fs-3">${{ "{:,.2f}".format(total_equity) }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center {% if pnl_total >= 0 %}bg-success{% else %}bg-danger{% endif %} text-white shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Overall P&L</h5>
+                <p class="card-text fs-3">${{ "{:,.2f}".format(pnl_total) }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center {% if pnl_today >= 0 %}bg-success{% else %}bg-danger{% endif %} text-white shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Day P&L</h5>
+                <p class="card-text fs-3">${{ "{:,.2f}".format(pnl_today) }}</p>
+            </div>
         </div>
     </div>
 </div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Current Positions</h5>
+            </div>
+            <div class="card-body">
+                {% if positions %}
+                <table class="table table-hover table-sm">
+                    <thead>
+                        <tr>
+                            <th>Symbol</th>
+                            <th>Qty</th>
+                            <th>Cost Basis</th>
+                            <th>Market Value</th>
+                            <th>Day P&L</th>
+                            <th>Total P&L</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for position in positions %}
+                        <tr>
+                            <td>{{ position.symbol }}</td>
+                            <td>{{ position.quantity }}</td>
+                            <td>${{ "{:,.2f}".format(position.cost_basis) }}</td>
+                            <td>${{ "{:,.2f}".format(position.market_value) }}</td>
+                            <td class="{% if position.change_day >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "{:,.2f}".format(position.change_day) }}</td>
+                            <td class="{% if position.gain_loss >= 0 %}text-success{% else %}text-danger{% endif %}">${{ "{:,.2f}".format(position.gain_loss) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted">No open positions.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Recent Trades</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_trades %}
+                <table class="table table-hover table-sm">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Symbol</th>
+                            <th>Type</th>
+                            <th>Side</th>
+                            <th>Qty</th>
+                            <th>Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for trade in recent_trades %}
+                        <tr>
+                            <td>{{ trade.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>{{ trade.symbol }}</td>
+                            <td>{{ trade.trade_type|capitalize }}</td>
+                            <td>{{ trade.side|capitalize }}</td>
+                            <td>{{ trade.quantity }}</td>
+                            <td>${{ "{:,.2f}".format(trade.price_placed) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="text-muted">No recent trades.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">P&L History</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="pnlChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Chart.js for P&L History
+    const ctx = document.getElementById('pnlChart').getContext('2d');
+    const pnlChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ pnl_dates | tojson }},
+            datasets: [{
+                label: 'Total P&L ($)',
+                data: {{ pnl_values | tojson }},
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Account P&L Over Time'
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'P&L ($)'
+                    }
+                }
+            }
+        }
+    });
+</script>
 {% endblock %}

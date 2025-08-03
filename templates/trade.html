@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Place Trade{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Place a New Trade</h2>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-dark text-white">
+        <h5 class="mb-0">Trade Entry</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" id="tradeForm">
+            <div class="mb-3">
+                <label for="trade_type" class="form-label">Trade Type</label>
+                <select class="form-select" id="trade_type" name="trade_type" required>
+                    <option value="equity" selected>Equity</option>
+                    <option value="option">Option</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="symbol" class="form-label">Symbol</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="symbol" name="symbol" placeholder="e.g., AAPL" required>
+                    <button class="btn btn-outline-secondary" type="button" id="getQuoteBtn">Get Quote</button>
+                </div>
+                <div id="quoteInfo" class="mt-2 small text-muted"></div>
+            </div>
+
+            <div class="mb-3" id="optionSymbolGroup" style="display: none;">
+                <label for="option_symbol" class="form-label">Option OCC Symbol</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="option_symbol" name="option_symbol" placeholder="e.g., AAPL240117C00150000">
+                    <button class="btn btn-outline-secondary" type="button" id="getOptionChainBtn">Get Option Chain</button>
+                </div>
+                <div id="optionChainInfo" class="mt-2 small text-muted"></div>
+            </div>
+
+            <div class="mb-3">
+                <label for="side" class="form-label">Side</label>
+                <select class="form-select" id="side" name="side" required>
+                    <option value="buy_to_open">Buy to Open</option>
+                    <option value="sell_to_close">Sell to Close</option>
+                    <option value="buy_to_close">Buy to Close</option>
+                    <option value="sell_to_open">Sell to Open</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="quantity" class="form-label">Quantity</label>
+                <input type="number" class="form-control" id="quantity" name="quantity" min="1" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="order_type" class="form-label">Order Type</label>
+                <select class="form-select" id="order_type" name="order_type" required>
+                    <option value="market">Market</option>
+                    <option value="limit">Limit</option>
+                </select>
+            </div>
+
+            <div class="mb-3" id="priceGroup" style="display: none;">
+                <label for="price" class="form-label">Price</label>
+                <input type="number" step="0.01" class="form-control" id="price" name="price">
+            </div>
+
+            <div class="mb-3">
+                <label for="duration" class="form-label">Duration</label>
+                <select class="form-select" id="duration" name="duration" required>
+                    <option value="day">Day</option>
+                    <option value="gtc">Good Til Canceled (GTC)</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Place Order</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        const $tradeType = $('#trade_type');
+        const $optionSymbolGroup = $('#optionSymbolGroup');
+        const $priceGroup = $('#priceGroup');
+        const $orderType = $('#order_type');
+        const $symbolInput = $('#symbol');
+        const $getQuoteBtn = $('#getQuoteBtn');
+        const $quoteInfo = $('#quoteInfo');
+        const $getOptionChainBtn = $('#getOptionChainBtn');
+        const $optionChainInfo = $('#optionChainInfo');
+
+        function toggleOptionFields() {
+            if ($tradeType.val() === 'option') {
+                $optionSymbolGroup.show();
+            } else {
+                $optionSymbolGroup.hide();
+                $optionChainInfo.empty(); // Clear option chain info when switching
+            }
+        }
+
+        function togglePriceField() {
+            if ($orderType.val() === 'limit') {
+                $priceGroup.show();
+                $('#price').attr('required', true);
+            } else {
+                $priceGroup.hide();
+                $('#price').attr('required', false);
+            }
+        }
+
+        // Initial state
+        toggleOptionFields();
+        togglePriceField();
+
+        // Event listeners
+        $tradeType.on('change', toggleOptionFields);
+        $orderType.on('change', togglePriceField);
+
+        $getQuoteBtn.on('click', function() {
+            const symbol = $symbolInput.val().toUpperCase();
+            if (symbol) {
+                $getQuoteBtn.prop('disabled', true).text('Fetching...');
+                $.getJSON('/get_quote/' + symbol, function(data) {
+                    if (data.error) {
+                        $quoteInfo.html('<span class="text-danger">' + data.error + '</span>');
+                    } else {
+                        $quoteInfo.html(
+                            '<strong>Last:</strong> $' + data.last.toFixed(2) +
+                            ' | <strong>Change:</strong> <span class="' + (data.change >= 0 ? 'text-success' : 'text-danger') + '">' + data.change.toFixed(2) + ' (' + data.change_percentage.toFixed(2) + '%)</span>' +
+                            '<br><strong>Bid:</strong> $' + data.bid.toFixed(2) +
+                            ' | <strong>Ask:</strong> $' + data.ask.toFixed(2) +
+                            ' | <strong>Volume:</strong> ' + data.volume.toLocaleString()
+                        );
+                    }
+                }).fail(function() {
+                    $quoteInfo.html('<span class="text-danger">Failed to fetch quote.</span>');
+                }).always(function() {
+                    $getQuoteBtn.prop('disabled', false).text('Get Quote');
+                });
+            } else {
+                $quoteInfo.html('<span class="text-warning">Please enter a symbol.</span>');
+            }
+        });
+
+        $getOptionChainBtn.on('click', function() {
+            const symbol = $symbolInput.val().toUpperCase();
+            if (symbol) {
+                $getOptionChainBtn.prop('disabled', true).text('Fetching...');
+                $.getJSON('/get_option_chain/' + symbol, function(data) {
+                    if (data.error) {
+                        $optionChainInfo.html('<span class="text-danger">' + data.error + '</span>');
+                    } else {
+                        let html = '<h6>Available Options:</h6><ul class="list-unstyled small">';
+                        data.options.forEach(option => {
+                            html += `<li>${option.description} (Bid: $${option.bid?.toFixed(2) || 'N/A'}, Ask: $${option.ask?.toFixed(2) || 'N/A'}) - OCC: <strong>${option.symbol}</strong></li>`;
+                        });
+                        html += '</ul>';
+                        $optionChainInfo.html(html);
+                    }
+                }).fail(function() {
+                    $optionChainInfo.html('<span class="text-danger">Failed to fetch option chain.</span>');
+                }).always(function() {
+                    $getOptionChainBtn.prop('disabled', false).text('Get Option Chain');
+                });
+            } else {
+                $optionChainInfo.html('<span class="text-warning">Please enter a stock symbol first.</span>');
+            }
+        });
+    });
+</script>
+{% endblock %}
