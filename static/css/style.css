@@ -1,3 +1,10 @@
-/* Add any custom styles here to override or extend Bootstrap */
-.text-success { color: #198754 !important; } /* Ensure Bootstrap green */
-.text-danger { color: #dc3545 !important; } /* Ensure Bootstrap red */
+/* Custom styles go here, e.g. for card sizing or specific layouts */
+.card {
+    border-radius: 0.75rem;
+}
+.jumbotron {
+    padding: 2rem 1rem;
+    margin-bottom: 2rem;
+    background-color: #e9ecef;
+    border-radius: 0.3rem;
+}

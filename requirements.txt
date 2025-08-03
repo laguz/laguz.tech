@@ -1,11 +1,14 @@
 Flask
+Flask-SQLAlchemy
+Flask-Migrate
 Flask-WTF
 Flask-Login
+Werkzeug
 datetime
 pymongo
 python-dotenv
 pandas
 numpy
-json
 requests
+email_validator
 os
