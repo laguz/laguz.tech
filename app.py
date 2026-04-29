@@ -5,11 +5,14 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 from datetime import datetime
 import requests
+import concurrent.futures
 from uvatradier import Tradier, Account, Quotes, OptionsData, EquityOrder, OptionsOrder
 from config import Config
+from flask_wtf.csrf import CSRFProtect
 
 app = Flask(__name__)
 app.config.from_object(Config)
+csrf = CSRFProtect(app)
 
 # MongoDB setup
 client = MongoClient(app.config['MONGO_URI'])
@@ -286,22 +289,25 @@ def get_option_chain(symbol):
 def update_pnl_snapshot():
     with app.app_context(): # Ensure app context for database operations
         pnl_snapshots = []
-        for user_doc in users_collection.find({}):
-            user_id = str(user_doc['_id'])
-            try:
-                tradier_account_instance = Account(tradier_account_id, tradier_access_token, live_trade=tradier_live_trading)
-                account_balance = tradier_account_instance.get_account_balance()
-                current_pnl = account_balance.get('realized_gain_loss', 0) + account_balance.get('unrealized_gain_loss', 0)
+        user_ids = [str(user_doc['_id']) for user_doc in users_collection.find({})]
 
+        try:
+            tradier_account_instance = Account(tradier_account_id, tradier_access_token, live_trade=tradier_live_trading)
+            account_balance = tradier_account_instance.get_account_balance()
+            current_pnl = account_balance.get('realized_gain_loss', 0) + account_balance.get('unrealized_gain_loss', 0)
+            total_equity = account_balance.get('total_equity', 0)
+            now = datetime.now()
+
+            for user_id in user_ids:
                 pnl_snapshots.append({
                     'user_id': user_id,
-                    'date': datetime.now(),
+                    'date': now,
                     'pnl': current_pnl,
-                    'total_equity': account_balance.get('total_equity', 0)
+                    'total_equity': total_equity
                 })
-                print(f"P&L snapshot prepared for user {user_id}: {current_pnl}")
-            except Exception as e:
-                print(f"Error preparing P&L for user {user_id}: {e}")
+        except Exception as e:
+            print(f"Error preparing global P&L: {e}")
+            return
 
         if pnl_snapshots:
             try:

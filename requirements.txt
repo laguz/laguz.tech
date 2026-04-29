@@ -3,10 +3,10 @@ Flask-Migrate
 Flask-WTF
 Flask-Login
 Werkzeug
-datetime
 pymongo
 python-dotenv
 pandas
 numpy
 requests
 uvatradier
+mongomock
