@@ -3,7 +3,7 @@ import json
 from config import Config
 
 class TradierAPI:
-    def __init__(self, access_token=Config.TRADIER_ACCESS_TOKEN, base_url=Config.TRADIER_BASE_URL):
+    def __init__(self, access_token=Config.TRADIER_ACCESS_TOKEN, base_url=Config.TRADIER_API_BASE_URL):
         self.access_token = access_token
         self.base_url = base_url
         self.headers = {
@@ -26,8 +26,12 @@ class TradierAPI:
 
     def get_quotes(self, symbols):
         """Fetches quotes for given symbols."""
+        if symbols is None:
+            return None
         if not isinstance(symbols, list):
             symbols = [symbols]
+        if not symbols:
+            return None
         params = {'symbols': ','.join(symbols), 'greeks': 'false'} # Add Greeks for options if needed
         return self._make_request('markets/quotes', params)
 
