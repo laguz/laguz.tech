@@ -19,4 +19,3 @@ class Config:
     TRADIER_ACCESS_TOKEN = os.environ.get('TRADIER_ACCESS_TOKEN')
     TRADIER_ACCOUNT_ID = os.environ.get('TRADIER_ACCOUNT_ID')
     TRADIER_LIVE_TRADING = os.environ.get('TRADIER_LIVE_TRADING')
-    DEBUG = os.environ.get('FLASK_DEBUG', 'False').lower() in ['true', '1', 't']
