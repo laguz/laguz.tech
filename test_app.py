@@ -1,5 +1,8 @@
 import unittest
 import os
+from unittest.mock import patch
+import mongomock
+from werkzeug.security import generate_password_hash
 
 # Set required environment variables before importing app
 os.environ['SECRET_KEY'] = 'test_secret'
@@ -9,12 +12,51 @@ os.environ['TRADIER_ACCOUNT_ID'] = 'test_account'
 os.environ['TRADIER_LIVE_TRADING'] = 'false'
 
 import app
+from werkzeug.security import generate_password_hash
+from unittest.mock import patch
+import mongomock
 
 class TestApp(unittest.TestCase):
     def setUp(self):
         app.app.config['TESTING'] = True
         app.app.config['WTF_CSRF_ENABLED'] = False
         self.client = app.app.test_client()
+
+        # Create a mongomock database and patch the users collection
+        self.mock_db = mongomock.MongoClient().db
+        self.patcher = patch('app.users_collection', self.mock_db.users)
+        self.mock_users = self.patcher.start()
+
+        # Set up a test user in the integration DB
+        self.test_username = 'integration_user'
+        self.test_password = 'integration_password'
+
+        # Insert test user
+        self.mock_users.insert_one({
+            'username': self.test_username,
+            'email': 'integration@example.com',
+            'password': generate_password_hash(self.test_password)
+        })
+
+    def tearDown(self):
+        # Clean up
+        self.patcher.stop()
+
+    def test_login_success(self):
+        response = self.client.post('/login', data={
+            'username': self.test_username,
+            'password': self.test_password
+        }, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Logged in successfully!', response.data)
+
+    def test_login_invalid(self):
+        response = self.client.post('/login', data={
+            'username': self.test_username,
+            'password': 'wrong_password'
+        }, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Invalid username or password.', response.data)
 
     def test_register_password_mismatch(self):
         response = self.client.post('/register', data={

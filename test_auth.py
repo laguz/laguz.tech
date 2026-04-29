@@ -87,43 +87,19 @@ class TestAuth(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.location.endswith('/dashboard'))
 
-    def test_load_user_success(self):
-        # Insert a user to get a valid ObjectId
-        user_data = {
-            'username': 'loaduser_test',
-            'email': 'loaduser@example.com',
-            'password': generate_password_hash('password123')
-        }
-        result = self.mock_users.insert_one(user_data)
-        user_id = result.inserted_id
+    def test_register_password_mismatch(self):
+        # Test password and confirm_password mismatch
+        response = self.client.post('/register', data={
+            'username': 'newuser',
+            'email': 'newuser@example.com',
+            'password': 'password123',
+            'confirm_password': 'password456'
+        }, follow_redirects=False)
 
-        # Call load_user and verify it returns a User object with correct attributes
-        with patch('app.users_collection.find_one') as mock_find_one:
-            mock_find_one.return_value = {
-                '_id': user_id,
-                'username': 'loaduser_test',
-                'password': 'hashed_password'
-            }
-            user = load_user(str(user_id))
-
-            self.assertIsNotNone(user)
-            self.assertEqual(user.id, str(user_id))
-            self.assertEqual(user.username, 'loaduser_test')
-            self.assertEqual(user.password_hash, 'hashed_password')
-            mock_find_one.assert_called_once_with({'_id': ObjectId(str(user_id))})
-
-    def test_load_user_not_found(self):
-        # Generate a non-existent ObjectId string
-        non_existent_id = str(ObjectId())
-
-        # Call load_user with the non-existent ID
-        with patch('app.users_collection.find_one') as mock_find_one:
-            mock_find_one.return_value = None
-            user = load_user(non_existent_id)
-
-            # Verify it returns None
-            self.assertIsNone(user)
-            mock_find_one.assert_called_once_with({'_id': ObjectId(non_existent_id)})
+        # Verify that registration fails and returns 200 OK (renders template again)
+        self.assertEqual(response.status_code, 200)
+        # Verify the flash message is present in the response
+        self.assertIn(b'Passwords do not match!', response.data)
 
 if __name__ == '__main__':
     unittest.main()

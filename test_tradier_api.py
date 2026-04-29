@@ -53,6 +53,51 @@ class TestTradierAPIQuotes(unittest.TestCase):
             self.assertIsNone(result)
             mock_make_request.assert_not_called()
 
+    def test_get_history_basic(self):
+        """Test get_history with basic parameters."""
+        with patch.object(TradierAPI, '_make_request') as mock_make_request:
+            self.api.get_history('AAPL')
+            mock_make_request.assert_called_once_with(
+                'markets/history',
+                {'symbol': 'AAPL', 'interval': 'daily'}
+            )
+
+    def test_get_history_with_dates(self):
+        """Test get_history with start and end dates."""
+        with patch.object(TradierAPI, '_make_request') as mock_make_request:
+            self.api.get_history('AAPL', start='2023-01-01', end='2023-12-31')
+            mock_make_request.assert_called_once_with(
+                'markets/history',
+                {'symbol': 'AAPL', 'interval': 'daily', 'start': '2023-01-01', 'end': '2023-12-31'}
+            )
+
+    def test_get_option_chains(self):
+        """Test get_option_chains."""
+        with patch.object(TradierAPI, '_make_request') as mock_make_request:
+            self.api.get_option_chains('AAPL', '2024-01-19')
+            mock_make_request.assert_called_once_with(
+                'markets/options/chains',
+                {'symbol': 'AAPL', 'expiration': '2024-01-19', 'greeks': 'false'}
+            )
+
+    def test_get_balances(self):
+        """Test get_balances."""
+        with patch.object(TradierAPI, '_make_request') as mock_make_request:
+            self.api.get_balances('acc123')
+            mock_make_request.assert_called_once_with('accounts/acc123/balances')
+
+    def test_get_positions(self):
+        """Test get_positions."""
+        with patch.object(TradierAPI, '_make_request') as mock_make_request:
+            self.api.get_positions('acc123')
+            mock_make_request.assert_called_once_with('accounts/acc123/positions')
+
+    def test_get_orders(self):
+        """Test get_orders."""
+        with patch.object(TradierAPI, '_make_request') as mock_make_request:
+            self.api.get_orders('acc123')
+            mock_make_request.assert_called_once_with('accounts/acc123/orders')
+
 class TestTradierAPIPlaceOrder(unittest.TestCase):
     def setUp(self):
         # Initialize TradierAPI with dummy values
