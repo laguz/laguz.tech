@@ -1,5 +1,4 @@
 import requests
-import json
 from config import Config
 
 class TradierAPI:
