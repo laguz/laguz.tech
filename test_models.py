@@ -1,6 +1,19 @@
 import unittest
 from models import Trade
 
+class TestTrade(unittest.TestCase):
+    def test_positive_pnl(self):
+        trade = Trade("AAPL", 10, 150.00, 155.50)
+        self.assertEqual(trade.pnl, 55.0)
+
+    def test_negative_pnl(self):
+        trade = Trade("MSFT", 5, 280.50, 275.25)
+        self.assertEqual(trade.pnl, -26.25)
+
+    def test_zero_pnl(self):
+        trade = Trade("GOOG", 2, 1200.00, 1200.00)
+        self.assertEqual(trade.pnl, 0.0)
+
 class TestModels(unittest.TestCase):
     def test_trade_pnl_calculation(self):
         trade1 = Trade("AAPL", 10, 150.00, 155.50)
