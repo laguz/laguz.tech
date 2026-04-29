@@ -286,6 +286,7 @@ def get_option_chain(symbol):
 # Helper to update P&L snapshot (can be a scheduled task in a real app)
 def update_pnl_snapshot():
     with app.app_context(): # Ensure app context for database operations
+        pnl_snapshots = []
         for user_doc in users_collection.find({}):
             user_id = str(user_doc['_id'])
             try:
@@ -293,15 +294,22 @@ def update_pnl_snapshot():
                 account_balance = tradier_account_instance.get_account_balance()
                 current_pnl = account_balance.get('realized_gain_loss', 0) + account_balance.get('unrealized_gain_loss', 0)
 
-                pnl_collection.insert_one({
+                pnl_snapshots.append({
                     'user_id': user_id,
                     'date': datetime.now(),
                     'pnl': current_pnl,
                     'total_equity': account_balance.get('total_equity', 0)
                 })
-                print(f"P&L snapshot updated for user {user_id}: {current_pnl}")
+                print(f"P&L snapshot prepared for user {user_id}: {current_pnl}")
             except Exception as e:
-                print(f"Error updating P&L for user {user_id}: {e}")
+                print(f"Error preparing P&L for user {user_id}: {e}")
+
+        if pnl_snapshots:
+            try:
+                pnl_collection.insert_many(pnl_snapshots)
+                print(f"P&L snapshots updated for {len(pnl_snapshots)} users.")
+            except Exception as e:
+                print(f"Error inserting P&L snapshots: {e}")
 
 # Example of how you might trigger a P&L snapshot (in a real app, use a scheduler like APScheduler)
 @app.route('/update_pnl_manual')
