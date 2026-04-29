@@ -137,5 +137,71 @@ class TestTradierAPIMakeRequest(unittest.TestCase):
         )
         self.assertIsNone(result)
 
+    @patch('tradier_api.requests.get')
+    def test_make_request_http_error(self, mock_get):
+        """Test _make_request HTTPError handling from raise_for_status."""
+        mock_response = MagicMock()
+        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError("Mocked HTTP Error")
+        mock_get.return_value = mock_response
+
+        result = self.api._make_request('test/endpoint', method='GET')
+
+        mock_get.assert_called_once_with(
+            'https://api.tradier.com/v1/test/endpoint',
+            headers=self.api.headers,
+            params=None
+        )
+        mock_response.raise_for_status.assert_called_once()
+        self.assertIsNone(result)
+
+    def test_make_request_unsupported_method(self):
+        """Test _make_request raises ValueError for unsupported HTTP methods."""
+        with self.assertRaises(ValueError) as context:
+            self.api._make_request('test/endpoint', method='PUT')
+        self.assertEqual(str(context.exception), "Unsupported HTTP method: PUT")
+
+class TestTradierAPIEndpoints(unittest.TestCase):
+    def setUp(self):
+        self.api = TradierAPI(access_token='fake_token', base_url='https://api.tradier.com/v1')
+
+    @patch.object(TradierAPI, '_make_request')
+    def test_get_history(self, mock_make_request):
+        self.api.get_history('AAPL', interval='weekly', start='2023-01-01', end='2023-12-31')
+        mock_make_request.assert_called_once_with(
+            'markets/history',
+            {'symbol': 'AAPL', 'interval': 'weekly', 'start': '2023-01-01', 'end': '2023-12-31'}
+        )
+
+    @patch.object(TradierAPI, '_make_request')
+    def test_get_history_defaults(self, mock_make_request):
+        self.api.get_history('AAPL')
+        mock_make_request.assert_called_once_with(
+            'markets/history',
+            {'symbol': 'AAPL', 'interval': 'daily'}
+        )
+
+    @patch.object(TradierAPI, '_make_request')
+    def test_get_option_chains(self, mock_make_request):
+        self.api.get_option_chains('AAPL', '2024-01-19')
+        mock_make_request.assert_called_once_with(
+            'markets/options/chains',
+            {'symbol': 'AAPL', 'expiration': '2024-01-19', 'greeks': 'false'}
+        )
+
+    @patch.object(TradierAPI, '_make_request')
+    def test_get_balances(self, mock_make_request):
+        self.api.get_balances('acc123')
+        mock_make_request.assert_called_once_with('accounts/acc123/balances')
+
+    @patch.object(TradierAPI, '_make_request')
+    def test_get_positions(self, mock_make_request):
+        self.api.get_positions('acc123')
+        mock_make_request.assert_called_once_with('accounts/acc123/positions')
+
+    @patch.object(TradierAPI, '_make_request')
+    def test_get_orders(self, mock_make_request):
+        self.api.get_orders('acc123')
+        mock_make_request.assert_called_once_with('accounts/acc123/orders')
+
 if __name__ == '__main__':
     unittest.main()

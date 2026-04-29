@@ -17,6 +17,8 @@ class TradierAPI:
                 response = requests.get(url, headers=self.headers, params=params)
             elif method == 'POST':
                 response = requests.post(url, headers=self.headers, data=params) # Use data for form-encoded
+            else:
+                raise ValueError(f"Unsupported HTTP method: {method}")
             response.raise_for_status() # Raise an exception for HTTP errors
             return response.json()
         except requests.exceptions.RequestException as e:
