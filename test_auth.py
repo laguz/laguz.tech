@@ -85,5 +85,19 @@ class TestAuth(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.location.endswith('/dashboard'))
 
+    def test_register_password_mismatch(self):
+        # Test password and confirm_password mismatch
+        response = self.client.post('/register', data={
+            'username': 'newuser',
+            'email': 'newuser@example.com',
+            'password': 'password123',
+            'confirm_password': 'password456'
+        }, follow_redirects=False)
+
+        # Verify that registration fails and returns 200 OK (renders template again)
+        self.assertEqual(response.status_code, 200)
+        # Verify the flash message is present in the response
+        self.assertIn(b'Passwords do not match!', response.data)
+
 if __name__ == '__main__':
     unittest.main()
