@@ -11,8 +11,10 @@ os.environ['TRADIER_ACCESS_TOKEN'] = 'test_token'
 os.environ['TRADIER_ACCOUNT_ID'] = 'test_account'
 os.environ['TRADIER_LIVE_TRADING'] = 'False'
 
+from bson.objectid import ObjectId
+
 # Import app after environment variables are set
-from app import app, users_collection
+from app import app, users_collection, load_user
 
 class TestAuth(unittest.TestCase):
     @classmethod

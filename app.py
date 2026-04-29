@@ -308,12 +308,23 @@ def update_pnl_snapshot():
         pnl_snapshots = []
         user_ids = [str(user_doc['_id']) for user_doc in users_collection.find({})]
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
-            results = executor.map(_fetch_user_pnl, user_ids)
+        try:
+            tradier_account_instance = Account(tradier_account_id, tradier_access_token, live_trade=tradier_live_trading)
+            account_balance = tradier_account_instance.get_account_balance()
+            current_pnl = account_balance.get('realized_gain_loss', 0) + account_balance.get('unrealized_gain_loss', 0)
+            total_equity = account_balance.get('total_equity', 0)
+            now = datetime.now()
 
-            for result in results:
-                if result is not None:
-                    pnl_snapshots.append(result)
+            for user_id in user_ids:
+                pnl_snapshots.append({
+                    'user_id': user_id,
+                    'date': now,
+                    'pnl': current_pnl,
+                    'total_equity': total_equity
+                })
+        except Exception as e:
+            print(f"Error preparing global P&L: {e}")
+            return
 
         if pnl_snapshots:
             try:
