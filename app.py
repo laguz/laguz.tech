@@ -3,7 +3,6 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from werkzeug.security import generate_password_hash, check_password_hash
 from pymongo import MongoClient
 from bson.objectid import ObjectId
-import os
 from datetime import datetime, timedelta
 import requests
 from uvatradier import Tradier, Account, Quotes, OptionsData, EquityOrder, OptionsOrder
