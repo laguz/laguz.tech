@@ -11,8 +11,10 @@ os.environ['TRADIER_ACCESS_TOKEN'] = 'test_token'
 os.environ['TRADIER_ACCOUNT_ID'] = 'test_account'
 os.environ['TRADIER_LIVE_TRADING'] = 'False'
 
+from bson.objectid import ObjectId
+
 # Import app after environment variables are set
-from app import app, users_collection
+from app import app, users_collection, load_user
 
 class TestAuth(unittest.TestCase):
     @classmethod
@@ -84,6 +86,44 @@ class TestAuth(unittest.TestCase):
         # Verify user is redirected to dashboard
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.location.endswith('/dashboard'))
+
+    def test_load_user_success(self):
+        # Insert a user to get a valid ObjectId
+        user_data = {
+            'username': 'loaduser_test',
+            'email': 'loaduser@example.com',
+            'password': generate_password_hash('password123')
+        }
+        result = self.mock_users.insert_one(user_data)
+        user_id = result.inserted_id
+
+        # Call load_user and verify it returns a User object with correct attributes
+        with patch('app.users_collection.find_one') as mock_find_one:
+            mock_find_one.return_value = {
+                '_id': user_id,
+                'username': 'loaduser_test',
+                'password': 'hashed_password'
+            }
+            user = load_user(str(user_id))
+
+            self.assertIsNotNone(user)
+            self.assertEqual(user.id, str(user_id))
+            self.assertEqual(user.username, 'loaduser_test')
+            self.assertEqual(user.password_hash, 'hashed_password')
+            mock_find_one.assert_called_once_with({'_id': ObjectId(str(user_id))})
+
+    def test_load_user_not_found(self):
+        # Generate a non-existent ObjectId string
+        non_existent_id = str(ObjectId())
+
+        # Call load_user with the non-existent ID
+        with patch('app.users_collection.find_one') as mock_find_one:
+            mock_find_one.return_value = None
+            user = load_user(non_existent_id)
+
+            # Verify it returns None
+            self.assertIsNone(user)
+            mock_find_one.assert_called_once_with({'_id': ObjectId(non_existent_id)})
 
 if __name__ == '__main__':
     unittest.main()
