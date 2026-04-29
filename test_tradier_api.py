@@ -51,5 +51,35 @@ class TestTradierAPIQuotes(unittest.TestCase):
             self.assertIsNone(result)
             mock_make_request.assert_not_called()
 
+class TestTradierAPIPlaceOrder(unittest.TestCase):
+    def setUp(self):
+        # Initialize TradierAPI with dummy values
+        self.api = TradierAPI(access_token='fake_token', base_url='https://api.tradier.com/v1')
+
+    def test_place_order_equity(self):
+        """Test place_order for a standard equity order."""
+        with patch.object(TradierAPI, '_make_request') as mock_make_request:
+            order_data = {'class': 'equity', 'symbol': 'SPY', 'side': 'buy', 'quantity': 1, 'type': 'market', 'duration': 'day'}
+            self.api.place_order('test_account_123', order_data)
+
+            mock_make_request.assert_called_once_with(
+                'accounts/test_account_123/orders',
+                params=order_data,
+                method='POST'
+            )
+
+    def test_place_order_options(self):
+        """Test place_order for an options order."""
+        with patch.object(TradierAPI, '_make_request') as mock_make_request:
+            order_data = {'class': 'option', 'symbol': 'SPY', 'option_symbol': 'SPY240119C00400000', 'side': 'buy_to_open', 'quantity': 1, 'type': 'market', 'duration': 'day'}
+            self.api.place_order('test_account_123', order_data)
+
+            mock_make_request.assert_called_once_with(
+                'accounts/test_account_123/orders',
+                params=order_data,
+                method='POST'
+            )
+
+
 if __name__ == '__main__':
     unittest.main()
