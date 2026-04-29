@@ -1,5 +1,8 @@
 import unittest
 import os
+from unittest.mock import patch
+import mongomock
+from werkzeug.security import generate_password_hash
 
 # Set required environment variables before importing app
 os.environ['SECRET_KEY'] = 'test_secret'
