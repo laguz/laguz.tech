@@ -7,9 +7,11 @@ from datetime import datetime
 import requests
 from uvatradier import Tradier, Account, Quotes, OptionsData, EquityOrder, OptionsOrder
 from config import Config
+from flask_wtf.csrf import CSRFProtect
 
 app = Flask(__name__)
 app.config.from_object(Config)
+csrf = CSRFProtect(app)
 
 # MongoDB setup
 client = MongoClient(app.config['MONGO_URI'])
