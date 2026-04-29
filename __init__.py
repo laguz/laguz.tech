@@ -8,7 +8,7 @@ client_id = os.environ.get("client_id")
 TDSession = TDClient(
     client_id,
     redirect_uri='http://localhost',
-    credentials_path='/content/credentials.json'
+    credentials_path=os.environ.get('CREDENTIALS_PATH', 'credentials.json')
 )
 
 # Login to the session
