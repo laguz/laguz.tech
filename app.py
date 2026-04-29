@@ -285,6 +285,23 @@ def get_option_chain(symbol):
     except Exception as e:
         return {'error': str(e)}, 500
 
+def _fetch_user_pnl(user_id):
+    try:
+        tradier_account_instance = Account(tradier_account_id, tradier_access_token, live_trade=tradier_live_trading)
+        account_balance = tradier_account_instance.get_account_balance()
+        current_pnl = account_balance.get('realized_gain_loss', 0) + account_balance.get('unrealized_gain_loss', 0)
+
+        print(f"P&L snapshot prepared for user {user_id}: {current_pnl}")
+        return {
+            'user_id': user_id,
+            'date': datetime.now(),
+            'pnl': current_pnl,
+            'total_equity': account_balance.get('total_equity', 0)
+        }
+    except Exception as e:
+        print(f"Error preparing P&L for user {user_id}: {e}")
+        return None
+
 # Helper to update P&L snapshot (can be a scheduled task in a real app)
 def update_pnl_snapshot():
     with app.app_context(): # Ensure app context for database operations
