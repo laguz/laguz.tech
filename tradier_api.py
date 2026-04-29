@@ -70,22 +70,3 @@ class TradierAPI:
         return self._make_request(f'accounts/{account_id}/orders', params=order_data, method='POST')
 
     # Add more API methods as needed (e.g., streaming, corporate actions)
-
-# Example usage (for testing)
-if __name__ == '__main__':
-    api = TradierAPI()
-    # Test getting quotes
-    # quotes = api.get_quotes(['SPY', 'AAPL'])
-    # if quotes and 'quotes' in quotes and quotes['quotes'] is not None:
-    #     for quote in quotes['quotes']['quote']:
-    #         print(f"Symbol: {quote['symbol']}, Last: {quote['last']}")
-    # else:
-    #     print("Could not retrieve quotes.")
-
-    # Test getting historical data
-    # history = api.get_history('AAPL', interval='daily', start='2024-01-01', end='2024-01-31')
-    # if history and 'history' in history and history['history'] is not None:
-    #     for day in history['history']['day']:
-    #         print(f"Date: {day['date']}, Close: {day['close']}")
-    # else:
-    #     print("Could not retrieve historical data.")

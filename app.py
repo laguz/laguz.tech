@@ -1,16 +1,18 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from pymongo import MongoClient
 from bson.objectid import ObjectId
-import os
-from datetime import datetime, timedelta
+from datetime import datetime
 import requests
+import concurrent.futures
 from uvatradier import Tradier, Account, Quotes, OptionsData, EquityOrder, OptionsOrder
 from config import Config
+from flask_wtf.csrf import CSRFProtect
 
 app = Flask(__name__)
 app.config.from_object(Config)
+csrf = CSRFProtect(app)
 
 # MongoDB setup
 client = MongoClient(app.config['MONGO_URI'])
@@ -283,26 +285,35 @@ def get_option_chain(symbol):
     except Exception as e:
         return {'error': str(e)}, 500
 
+def _fetch_user_pnl(user_id):
+    try:
+        tradier_account_instance = Account(tradier_account_id, tradier_access_token, live_trade=tradier_live_trading)
+        account_balance = tradier_account_instance.get_account_balance()
+        current_pnl = account_balance.get('realized_gain_loss', 0) + account_balance.get('unrealized_gain_loss', 0)
+
+        print(f"P&L snapshot prepared for user {user_id}: {current_pnl}")
+        return {
+            'user_id': user_id,
+            'date': datetime.now(),
+            'pnl': current_pnl,
+            'total_equity': account_balance.get('total_equity', 0)
+        }
+    except Exception as e:
+        print(f"Error preparing P&L for user {user_id}: {e}")
+        return None
+
 # Helper to update P&L snapshot (can be a scheduled task in a real app)
 def update_pnl_snapshot():
     with app.app_context(): # Ensure app context for database operations
         pnl_snapshots = []
-        for user_doc in users_collection.find({}):
-            user_id = str(user_doc['_id'])
-            try:
-                tradier_account_instance = Account(tradier_account_id, tradier_access_token, live_trade=tradier_live_trading)
-                account_balance = tradier_account_instance.get_account_balance()
-                current_pnl = account_balance.get('realized_gain_loss', 0) + account_balance.get('unrealized_gain_loss', 0)
+        user_ids = [str(user_doc['_id']) for user_doc in users_collection.find({})]
 
-                pnl_snapshots.append({
-                    'user_id': user_id,
-                    'date': datetime.now(),
-                    'pnl': current_pnl,
-                    'total_equity': account_balance.get('total_equity', 0)
-                })
-                print(f"P&L snapshot prepared for user {user_id}: {current_pnl}")
-            except Exception as e:
-                print(f"Error preparing P&L for user {user_id}: {e}")
+        with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+            results = executor.map(_fetch_user_pnl, user_ids)
+
+            for result in results:
+                if result is not None:
+                    pnl_snapshots.append(result)
 
         if pnl_snapshots:
             try:
@@ -321,4 +332,4 @@ def manual_pnl_update():
 
 # --- Run the app ---
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, threaded=True, debug=True)
+    app.run(host='0.0.0.0', port=5000, threaded=True, debug=app.config.get('DEBUG', False))
