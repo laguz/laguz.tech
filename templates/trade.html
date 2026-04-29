@@ -11,6 +11,7 @@
     </div>
     <div class="card-body">
         <form method="POST" id="tradeForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div class="mb-3">
                 <label for="trade_type" class="form-label">Trade Type</label>
                 <select class="form-select" id="trade_type" name="trade_type" required>
