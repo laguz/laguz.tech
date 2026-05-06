@@ -13,6 +13,7 @@ os.environ['TRADIER_ACCOUNT_ID'] = 'test_account'
 os.environ['TRADIER_LIVE_TRADING'] = 'false'
 
 import app
+import requests
 from werkzeug.security import generate_password_hash
 from unittest.mock import patch
 import mongomock
