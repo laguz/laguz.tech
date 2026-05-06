@@ -1,5 +1,6 @@
 import unittest
 import os
+import requests
 from unittest.mock import patch
 import mongomock
 from werkzeug.security import generate_password_hash
