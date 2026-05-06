@@ -136,8 +136,9 @@ def dashboard():
         # Fetch recent trades from your MongoDB (up to N trades)
         recent_trades = trades_collection.find({'user_id': current_user.id}).sort('timestamp', -1).limit(10)
 
-        # Fetch P&L history from your MongoDB
-        pnl_history_data = list(pnl_collection.find({'user_id': current_user.id}).sort('date', 1))
+        # Fetch P&L history from your MongoDB (limit to last 100 entries)
+        pnl_history_data = list(pnl_collection.find({'user_id': current_user.id}).sort('date', -1).limit(100))
+        pnl_history_data.reverse() # Sort back to chronological order for the chart
 
         # Prepare data for charts (e.g., P&L history)
         pnl_dates = [data['date'].strftime('%Y-%m-%d') for data in pnl_history_data]
