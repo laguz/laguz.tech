@@ -5,7 +5,6 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 from datetime import datetime
 import requests
-import concurrent.futures
 from uvatradier import Tradier, Account, Quotes, OptionsData, EquityOrder, OptionsOrder
 from config import Config
 from flask_wtf.csrf import CSRFProtect
