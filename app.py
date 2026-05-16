@@ -210,11 +210,6 @@ def trade():
                     flash('Option symbol is required for options trades.', 'danger')
                     return render_template('trade.html')
 
-                # Get option chain to validate or help user select
-                # This is a good place to add logic to help find the OCC symbol
-                # Example: option_chain = tradier_options_data.get_chain_day(symbol)
-                # You'd typically need to parse this to get the specific OCC symbol for a strike/expiry
-
                 order_response = tradier_options_order.options_order(
                     occ_symbol=option_symbol,
                     side=side,
