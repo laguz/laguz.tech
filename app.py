@@ -107,12 +107,12 @@ def register():
             flash('Passwords do not match!', 'danger')
             return render_template('register.html', username=username)
 
-        if users_collection.find_one({'username': username}):
+        if users_collection.find_one({'username': username}, {'_id': 1}):
             flash('Username already exists. Please choose a different one.', 'warning')
             return render_template('register.html', username=username)
-        
-        if users_collection.find_one({'username': email}):
-            flash('Username already exists. Please choose a different one.', 'warning')
+
+        if users_collection.find_one({'email': email}, {'_id': 1}):
+            flash('Email already exists. Please choose a different one.', 'warning')
             return render_template('register.html', email=email)
 
         hashed_password = generate_password_hash(password)
@@ -294,7 +294,7 @@ def get_option_chain(symbol):
 def update_pnl_snapshot():
     with app.app_context(): # Ensure app context for database operations
         pnl_snapshots = []
-        user_ids = [str(user_doc['_id']) for user_doc in users_collection.find({})]
+        user_ids = [str(user_doc['_id']) for user_doc in users_collection.find({}, {'_id': 1})]
 
         try:
             tradier_account_instance = Account(tradier_account_id, tradier_access_token, live_trade=tradier_live_trading)
