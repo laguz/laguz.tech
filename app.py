@@ -4,6 +4,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from datetime import datetime
+from urllib.parse import urlparse, urljoin
+
 import requests
 from uvatradier import Tradier, Account, Quotes, OptionsData, EquityOrder, OptionsOrder
 from config import Config
@@ -59,6 +61,12 @@ def load_user(user_id):
         return User(user_data)
     return None
 
+def is_safe_url(target):
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+    return test_url.scheme in ('http', 'https') and \
+           ref_url.netloc == test_url.netloc
+
 # --- Routes ---
 
 @app.route('/')
@@ -77,7 +85,9 @@ def login():
             login_user(user)
             flash('Logged in successfully!', 'success')
             next_page = request.args.get('next')
-            return redirect(next_page or url_for('dashboard'))
+            if not next_page or not is_safe_url(next_page):
+                next_page = url_for('dashboard')
+            return redirect(next_page)
         else:
             flash('Invalid username or password.', 'danger')
     return render_template('login.html')
