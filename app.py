@@ -5,6 +5,7 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 from datetime import datetime
 from urllib.parse import urlparse, urljoin
+import concurrent.futures
 
 import requests
 from uvatradier import Tradier, Account, Quotes, OptionsData, EquityOrder, OptionsOrder
@@ -132,10 +133,15 @@ def logout():
 @login_required
 def dashboard():
     try:
-        # Get account balances and positions from Tradier
-        account_balance = tradier_account.get_account_balance()
-        positions = tradier_account.get_positions()
-        gain_loss = tradier_account.get_gainloss()
+        # Get account balances and positions from Tradier concurrently
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future_balance = executor.submit(tradier_account.get_account_balance)
+            future_positions = executor.submit(tradier_account.get_positions)
+            future_gain_loss = executor.submit(tradier_account.get_gainloss)
+
+            account_balance = future_balance.result()
+            positions = future_positions.result()
+            gain_loss = future_gain_loss.result()
 
         # Calculate P&L (simplified - you'll want to store this more robustly)
         total_equity = account_balance.get('total_equity', 0)
