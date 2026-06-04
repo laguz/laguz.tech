@@ -5,6 +5,7 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 from datetime import datetime
 from urllib.parse import urlparse, urljoin
+import cachetools.func
 
 import requests
 from uvatradier import Tradier, Account, Quotes, OptionsData, EquityOrder, OptionsOrder
@@ -284,6 +285,7 @@ def get_quote(symbol):
 
 @app.route('/get_option_chain/<symbol>')
 @login_required
+@cachetools.func.ttl_cache(maxsize=128, ttl=60)
 def get_option_chain(symbol):
     try:
         option_chain = tradier_options_data.get_chain_day(symbol)

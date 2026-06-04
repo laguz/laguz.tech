@@ -10,3 +10,4 @@ numpy
 requests
 uvatradier
 mongomock
+cachetools
