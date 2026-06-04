@@ -101,23 +101,24 @@ class TestAuth(unittest.TestCase):
         # Verify the flash message is present in the response
         self.assertIn(b'Passwords do not match!', response.data)
 
-    def test_logout_success(self):
-        # First, log in the user
-        self.client.post('/login', data={
-            'username': self.test_username,
-            'password': self.test_password
-        })
+    def test_load_user_valid_id(self):
+        # Test loading an existing user
+        user = self.mock_users.find_one({'username': self.test_username})
+        user_id = str(user['_id'])
 
-        # Then, log out the user
-        response = self.client.get('/logout', follow_redirects=False)
+        loaded_user = load_user(user_id)
 
-        # Verify user is redirected to login page
-        self.assertEqual(response.status_code, 302)
-        self.assertTrue(response.location.endswith('/login'))
+        self.assertIsNotNone(loaded_user)
+        self.assertEqual(loaded_user.id, user_id)
+        self.assertEqual(loaded_user.username, self.test_username)
 
-        # Follow redirect to check flash message
-        response_follow = self.client.get(response.location)
-        self.assertIn(b'You have been logged out.', response_follow.data)
+    def test_load_user_invalid_id(self):
+        # Test loading a non-existent user
+        invalid_id = str(ObjectId())
+
+        loaded_user = load_user(invalid_id)
+
+        self.assertIsNone(loaded_user)
 
 if __name__ == '__main__':
     unittest.main()

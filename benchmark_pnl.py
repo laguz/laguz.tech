@@ -66,7 +66,7 @@ def proposed_update_pnl_snapshot():
                 app.pnl_collection.insert_many(pnl_snapshots)
                 # print(f"P&L snapshots updated for {len(pnl_snapshots)} users.")
             except Exception as e:
-                pass
+                print(f"Error inserting P&L snapshots: {e}")
 
 @patch('app.Account.get_account_balance', side_effect=mock_get_account_balance)
 @patch('app.pnl_collection.insert_many')
