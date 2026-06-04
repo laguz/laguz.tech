@@ -107,13 +107,14 @@ def register():
             flash('Passwords do not match!', 'danger')
             return render_template('register.html', username=username)
 
-        if users_collection.find_one({'username': username}, {'_id': 1}):
-            flash('Username already exists. Please choose a different one.', 'warning')
-            return render_template('register.html', username=username)
-
-        if users_collection.find_one({'email': email}, {'_id': 1}):
-            flash('Email already exists. Please choose a different one.', 'warning')
-            return render_template('register.html', email=email)
+        existing_user = users_collection.find_one({'$or': [{'username': username}, {'email': email}]}, {'username': 1, 'email': 1})
+        if existing_user:
+            if existing_user.get('username') == username:
+                flash('Username already exists. Please choose a different one.', 'warning')
+                return render_template('register.html', username=username)
+            if existing_user.get('email') == email:
+                flash('Email already exists. Please choose a different one.', 'warning')
+                return render_template('register.html', email=email)
 
         hashed_password = generate_password_hash(password)
         users_collection.insert_one({'username': username, 'email': email, 'password': hashed_password})
