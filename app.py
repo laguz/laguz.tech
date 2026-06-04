@@ -328,8 +328,11 @@ def update_pnl_snapshot():
 @app.route('/update_pnl_manual')
 @login_required
 def manual_pnl_update():
-    update_pnl_snapshot()
-    flash('P&L snapshot updated.', 'success')
+    try:
+        update_pnl_snapshot()
+        flash('P&L snapshot updated.', 'success')
+    except Exception as e:
+        flash(f'Error updating P&L snapshot: {e}', 'danger')
     return redirect(url_for('dashboard'))
 
 # --- Run the app ---
