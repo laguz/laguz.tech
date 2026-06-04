@@ -108,5 +108,19 @@ class TestApp(unittest.TestCase):
         self.assertIn(b'No recent trades.', response.data)
         self.assertIn(b'$0.00', response.data)
 
+    @patch('app.update_pnl_snapshot')
+    def test_manual_pnl_update_exception(self, mock_update_pnl):
+        mock_update_pnl.side_effect = Exception("Test exception in update_pnl")
+
+        # login
+        self.client.post('/login', data={
+            'username': self.test_username,
+            'password': self.test_password
+        })
+
+        response = self.client.get('/update_pnl_manual', follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Error updating P&amp;L snapshot: Test exception in update_pnl', response.data)
+
 if __name__ == '__main__':
     unittest.main()
