@@ -5,7 +5,7 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 from datetime import datetime
 from urllib.parse import urlparse, urljoin
-import cachetools.func
+import concurrent.futures
 
 import requests
 from uvatradier import Tradier, Account, Quotes, OptionsData, EquityOrder, OptionsOrder
@@ -64,7 +64,8 @@ def load_user(user_id):
 
 def is_safe_url(target):
     ref_url = urlparse(request.host_url)
-    test_url = urlparse(urljoin(request.host_url, target))
+    target_clean = target.replace('\\', '/')
+    test_url = urlparse(urljoin(request.host_url, target_clean))
     return test_url.scheme in ('http', 'https') and \
            ref_url.netloc == test_url.netloc
 
@@ -108,13 +109,14 @@ def register():
             flash('Passwords do not match!', 'danger')
             return render_template('register.html', username=username)
 
-        if users_collection.find_one({'username': username}, {'_id': 1}):
-            flash('Username already exists. Please choose a different one.', 'warning')
-            return render_template('register.html', username=username)
-
-        if users_collection.find_one({'email': email}, {'_id': 1}):
-            flash('Email already exists. Please choose a different one.', 'warning')
-            return render_template('register.html', email=email)
+        existing_user = users_collection.find_one({'$or': [{'username': username}, {'email': email}]}, {'username': 1, 'email': 1})
+        if existing_user:
+            if existing_user.get('username') == username:
+                flash('Username already exists. Please choose a different one.', 'warning')
+                return render_template('register.html', username=username)
+            if existing_user.get('email') == email:
+                flash('Email already exists. Please choose a different one.', 'warning')
+                return render_template('register.html', email=email)
 
         hashed_password = generate_password_hash(password)
         users_collection.insert_one({'username': username, 'email': email, 'password': hashed_password})
@@ -133,10 +135,15 @@ def logout():
 @login_required
 def dashboard():
     try:
-        # Get account balances and positions from Tradier
-        account_balance = tradier_account.get_account_balance()
-        positions = tradier_account.get_positions()
-        gain_loss = tradier_account.get_gainloss()
+        # Get account balances and positions from Tradier concurrently
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future_balance = executor.submit(tradier_account.get_account_balance)
+            future_positions = executor.submit(tradier_account.get_positions)
+            future_gain_loss = executor.submit(tradier_account.get_gainloss)
+
+            account_balance = future_balance.result()
+            positions = future_positions.result()
+            gain_loss = future_gain_loss.result()
 
         # Calculate P&L (simplified - you'll want to store this more robustly)
         total_equity = account_balance.get('total_equity', 0)
@@ -182,6 +189,7 @@ def dashboard():
                                pnl_dates=[],
                                pnl_values=[])
     except Exception as e:
+        app.logger.exception("An unexpected error occurred in dashboard")
         flash(f"An unexpected error occurred: {e}", 'danger')
         return render_template('dashboard.html',
                                account_balance={},
@@ -258,6 +266,7 @@ def trade():
         except requests.exceptions.RequestException as e:
             flash(f"Error communicating with Tradier API: {e}", 'danger')
         except Exception as e:
+            app.logger.exception("An unexpected error occurred during trade")
             flash(f"An error occurred: {e}", 'danger')
 
     return render_template('trade.html')
@@ -281,6 +290,7 @@ def get_quote(symbol):
             }
         return {'error': 'Quote not found'}, 404
     except Exception as e:
+        app.logger.exception(f"An unexpected error occurred while getting quote for {symbol}")
         return {'error': str(e)}, 500
 
 @app.route('/get_option_chain/<symbol>')
@@ -293,6 +303,7 @@ def get_option_chain(symbol):
             return {'options': option_chain['options']['option']}
         return {'error': 'Option chain not found'}, 404
     except Exception as e:
+        app.logger.exception(f"An unexpected error occurred while getting option chain for {symbol}")
         return {'error': str(e)}, 500
 
 # Helper to update P&L snapshot (can be a scheduled task in a real app)
@@ -316,7 +327,7 @@ def update_pnl_snapshot():
                     'total_equity': total_equity
                 })
         except Exception as e:
-            print(f"Error preparing global P&L: {e}")
+            app.logger.exception("Error preparing global P&L")
             return
 
         if pnl_snapshots:
@@ -324,14 +335,17 @@ def update_pnl_snapshot():
                 pnl_collection.insert_many(pnl_snapshots)
                 print(f"P&L snapshots updated for {len(pnl_snapshots)} users.")
             except Exception as e:
-                print(f"Error inserting P&L snapshots: {e}")
+                app.logger.exception("Error inserting P&L snapshots")
 
 # Example of how you might trigger a P&L snapshot (in a real app, use a scheduler like APScheduler)
 @app.route('/update_pnl_manual')
 @login_required
 def manual_pnl_update():
-    update_pnl_snapshot()
-    flash('P&L snapshot updated.', 'success')
+    try:
+        update_pnl_snapshot()
+        flash('P&L snapshot updated.', 'success')
+    except Exception as e:
+        flash(f'Error updating P&L snapshot: {e}', 'danger')
     return redirect(url_for('dashboard'))
 
 # --- Run the app ---
