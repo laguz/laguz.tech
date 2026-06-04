@@ -46,7 +46,7 @@ class TestSecurity(unittest.TestCase):
             'password': self.test_password
         }, follow_redirects=False)
 
-        # After the fix, it should redirect to the default dashboard, NOT malicious.com
+        # Ensure it redirects to the default dashboard, NOT malicious.com
         self.assertEqual(response.status_code, 302)
         self.assertNotEqual(response.location, malicious_url)
         self.assertTrue(response.location.endswith('/dashboard'))
