@@ -178,6 +178,7 @@ def dashboard():
                                pnl_dates=[],
                                pnl_values=[])
     except Exception as e:
+        app.logger.exception("An unexpected error occurred in dashboard")
         flash(f"An unexpected error occurred: {e}", 'danger')
         return render_template('dashboard.html',
                                account_balance={},
@@ -254,6 +255,7 @@ def trade():
         except requests.exceptions.RequestException as e:
             flash(f"Error communicating with Tradier API: {e}", 'danger')
         except Exception as e:
+            app.logger.exception("An unexpected error occurred during trade")
             flash(f"An error occurred: {e}", 'danger')
 
     return render_template('trade.html')
@@ -277,6 +279,7 @@ def get_quote(symbol):
             }
         return {'error': 'Quote not found'}, 404
     except Exception as e:
+        app.logger.exception(f"An unexpected error occurred while getting quote for {symbol}")
         return {'error': str(e)}, 500
 
 @app.route('/get_option_chain/<symbol>')
@@ -288,6 +291,7 @@ def get_option_chain(symbol):
             return {'options': option_chain['options']['option']}
         return {'error': 'Option chain not found'}, 404
     except Exception as e:
+        app.logger.exception(f"An unexpected error occurred while getting option chain for {symbol}")
         return {'error': str(e)}, 500
 
 # Helper to update P&L snapshot (can be a scheduled task in a real app)
@@ -311,7 +315,7 @@ def update_pnl_snapshot():
                     'total_equity': total_equity
                 })
         except Exception as e:
-            print(f"Error preparing global P&L: {e}")
+            app.logger.exception("Error preparing global P&L")
             return
 
         if pnl_snapshots:
@@ -319,7 +323,7 @@ def update_pnl_snapshot():
                 pnl_collection.insert_many(pnl_snapshots)
                 print(f"P&L snapshots updated for {len(pnl_snapshots)} users.")
             except Exception as e:
-                print(f"Error inserting P&L snapshots: {e}")
+                app.logger.exception("Error inserting P&L snapshots")
 
 # Example of how you might trigger a P&L snapshot (in a real app, use a scheduler like APScheduler)
 @app.route('/update_pnl_manual')
