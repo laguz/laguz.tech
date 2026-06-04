@@ -151,8 +151,11 @@ def dashboard():
         pnl_history_data.reverse() # Sort back to chronological order for the chart
 
         # Prepare data for charts (e.g., P&L history)
-        pnl_dates = [data['date'].strftime('%Y-%m-%d') for data in pnl_history_data]
-        pnl_values = [data['pnl'] for data in pnl_history_data]
+        pnl_dates = []
+        pnl_values = []
+        for data in pnl_history_data:
+            pnl_dates.append(data['date'].strftime('%Y-%m-%d'))
+            pnl_values.append(data['pnl'])
 
         return render_template('dashboard.html',
                                account_balance=account_balance,

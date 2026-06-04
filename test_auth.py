@@ -101,5 +101,24 @@ class TestAuth(unittest.TestCase):
         # Verify the flash message is present in the response
         self.assertIn(b'Passwords do not match!', response.data)
 
+    def test_load_user_valid_id(self):
+        # Test loading an existing user
+        user = self.mock_users.find_one({'username': self.test_username})
+        user_id = str(user['_id'])
+
+        loaded_user = load_user(user_id)
+
+        self.assertIsNotNone(loaded_user)
+        self.assertEqual(loaded_user.id, user_id)
+        self.assertEqual(loaded_user.username, self.test_username)
+
+    def test_load_user_invalid_id(self):
+        # Test loading a non-existent user
+        invalid_id = str(ObjectId())
+
+        loaded_user = load_user(invalid_id)
+
+        self.assertIsNone(loaded_user)
+
 if __name__ == '__main__':
     unittest.main()

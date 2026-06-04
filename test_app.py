@@ -108,19 +108,31 @@ class TestApp(unittest.TestCase):
         self.assertIn(b'No recent trades.', response.data)
         self.assertIn(b'$0.00', response.data)
 
-    @patch('app.update_pnl_snapshot')
-    def test_manual_pnl_update_exception(self, mock_update_pnl):
-        mock_update_pnl.side_effect = Exception("Test exception in update_pnl")
+    @patch('app.Account.get_account_balance')
+    @patch('sys.stdout', new_callable=unittest.mock.MagicMock)
+    def test_update_pnl_snapshot_exception_get_balance(self, mock_stdout, mock_get_account_balance):
+        import sys
+        import io
+        mock_get_account_balance.side_effect = Exception("Test get_account_balance exception")
 
-        # login
-        self.client.post('/login', data={
-            'username': self.test_username,
-            'password': self.test_password
-        })
+        captured_output = io.StringIO()
+        with patch('sys.stdout', new=captured_output):
+            app.update_pnl_snapshot()
 
-        response = self.client.get('/update_pnl_manual', follow_redirects=True)
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b'Error updating P&amp;L snapshot: Test exception in update_pnl', response.data)
+        self.assertIn("Error preparing global P&L: Test get_account_balance exception", captured_output.getvalue())
+
+    @patch('app.Account.get_account_balance')
+    @patch('app.pnl_collection.insert_many')
+    def test_update_pnl_snapshot_exception_insert_many(self, mock_insert_many, mock_get_account_balance):
+        import io
+        mock_get_account_balance.return_value = {'realized_gain_loss': 100, 'unrealized_gain_loss': 50, 'total_equity': 1000}
+        mock_insert_many.side_effect = Exception("Test insert_many exception")
+
+        captured_output = io.StringIO()
+        with patch('sys.stdout', new=captured_output):
+            app.update_pnl_snapshot()
+
+        self.assertIn("Error inserting P&L snapshots: Test insert_many exception", captured_output.getvalue())
 
 if __name__ == '__main__':
     unittest.main()
