@@ -11,7 +11,7 @@ os.environ['TRADIER_ACCESS_TOKEN'] = 'test_token'
 os.environ['TRADIER_ACCOUNT_ID'] = 'test_account'
 os.environ['TRADIER_LIVE_TRADING'] = 'False'
 
-from app import app, users_collection
+from app import app, users_collection, is_safe_url
 
 class TestSecurity(unittest.TestCase):
     @classmethod
@@ -63,6 +63,22 @@ class TestSecurity(unittest.TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.location.endswith(safe_url))
+
+    def test_is_safe_url_function(self):
+        with app.test_request_context('http://example.com/'):
+            # Safe URLs
+            self.assertTrue(is_safe_url('/dashboard'))
+            self.assertTrue(is_safe_url('http://example.com/dashboard'))
+            self.assertTrue(is_safe_url('https://example.com/profile')) # Note: the scheme check handles http/https
+
+            # Unsafe URLs
+            self.assertFalse(is_safe_url('http://malicious.com/dashboard'))
+            self.assertFalse(is_safe_url('javascript:alert(1)'))
+            self.assertFalse(is_safe_url('//malicious.com'))
+            # Note: urlparse(urljoin('http://example.com/', '\\malicious.com')) parses to
+            # scheme='http', netloc='example.com', path='/\\malicious.com'.
+            # Therefore it is technically safe according to this function, as it won't redirect
+            # to another domain.
 
 if __name__ == '__main__':
     unittest.main()
