@@ -132,7 +132,7 @@ class TestTradierAPIMakeRequest(unittest.TestCase):
     def setUp(self):
         self.api = TradierAPI(access_token='fake_token', base_url='https://api.tradier.com/v1')
 
-    @patch('tradier_api.requests.get')
+    @patch('requests.Session.get')
     def test_make_request_get_success(self, mock_get):
         """Test _make_request with GET method."""
         mock_response = MagicMock()
@@ -144,13 +144,12 @@ class TestTradierAPIMakeRequest(unittest.TestCase):
 
         mock_get.assert_called_once_with(
             'https://api.tradier.com/v1/test/endpoint',
-            headers=self.api.headers,
             params=params
         )
         mock_response.raise_for_status.assert_called_once()
         self.assertEqual(result, {'data': 'test_get'})
 
-    @patch('tradier_api.requests.post')
+    @patch('requests.Session.post')
     def test_make_request_post_success(self, mock_post):
         """Test _make_request with POST method."""
         mock_response = MagicMock()
@@ -162,13 +161,12 @@ class TestTradierAPIMakeRequest(unittest.TestCase):
 
         mock_post.assert_called_once_with(
             'https://api.tradier.com/v1/test/endpoint',
-            headers=self.api.headers,
             data=params
         )
         mock_response.raise_for_status.assert_called_once()
         self.assertEqual(result, {'data': 'test_post'})
 
-    @patch('tradier_api.requests.get')
+    @patch('requests.Session.get')
     def test_make_request_exception(self, mock_get):
         """Test _make_request exception handling."""
         mock_get.side_effect = requests.exceptions.RequestException("Mocked exception")
@@ -177,12 +175,11 @@ class TestTradierAPIMakeRequest(unittest.TestCase):
 
         mock_get.assert_called_once_with(
             'https://api.tradier.com/v1/test/endpoint',
-            headers=self.api.headers,
             params=None
         )
         self.assertIsNone(result)
 
-    @patch('tradier_api.requests.get')
+    @patch('requests.Session.get')
     def test_make_request_http_error(self, mock_get):
         """Test _make_request HTTPError handling from raise_for_status."""
         mock_response = MagicMock()
@@ -193,7 +190,6 @@ class TestTradierAPIMakeRequest(unittest.TestCase):
 
         mock_get.assert_called_once_with(
             'https://api.tradier.com/v1/test/endpoint',
-            headers=self.api.headers,
             params=None
         )
         mock_response.raise_for_status.assert_called_once()

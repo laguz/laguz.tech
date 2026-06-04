@@ -5,18 +5,19 @@ class TradierAPI:
     def __init__(self, access_token=Config.TRADIER_ACCESS_TOKEN, base_url=Config.TRADIER_API_BASE_URL):
         self.access_token = access_token
         self.base_url = base_url
-        self.headers = {
+        self.session = requests.Session()
+        self.session.headers.update({
             'Accept': 'application/json',
             'Authorization': f'Bearer {self.access_token}'
-        }
+        })
 
     def _make_request(self, endpoint, params=None, method='GET'):
         url = f"{self.base_url}/{endpoint}"
         try:
             if method == 'GET':
-                response = requests.get(url, headers=self.headers, params=params)
+                response = self.session.get(url, params=params)
             elif method == 'POST':
-                response = requests.post(url, headers=self.headers, data=params) # Use data for form-encoded
+                response = self.session.post(url, data=params) # Use data for form-encoded
             else:
                 raise ValueError(f"Unsupported HTTP method: {method}")
             response.raise_for_status() # Raise an exception for HTTP errors
