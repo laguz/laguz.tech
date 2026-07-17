@@ -12,6 +12,11 @@ os.environ['TRADIER_ACCESS_TOKEN'] = 'test_token'
 os.environ['TRADIER_ACCOUNT_ID'] = 'test_account'
 os.environ['TRADIER_LIVE_TRADING'] = 'false'
 
+import requests
+
+class MockRequestException(requests.exceptions.RequestException):
+    pass
+
 import app
 
 class TestGetQuote(unittest.TestCase):
@@ -105,6 +110,23 @@ class TestGetQuote(unittest.TestCase):
         self.assertEqual(response.status_code, 500)
         data = json.loads(response.data)
         self.assertEqual(data['error'], 'API error')
+
+    @patch('app.app.logger.exception')
+    def test_get_quote_request_exception(self, mock_logger):
+        self.login()
+
+        # Reset the mock because login() might trigger an unexpected dashboard error
+        # in some test environments without a real mongo connection
+        mock_logger.reset_mock()
+
+        # Mock RequestException
+        self.mock_get_quote_data.side_effect = MockRequestException("Request failed")
+
+        response = self.client.get('/get_quote/AAPL')
+        self.assertEqual(response.status_code, 500)
+        data = json.loads(response.data)
+        self.assertEqual(data['error'], 'Request failed')
+        mock_logger.assert_called_once_with("An unexpected error occurred while getting quote for AAPL")
 
 if __name__ == '__main__':
     unittest.main()
