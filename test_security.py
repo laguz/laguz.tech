@@ -75,10 +75,9 @@ class TestSecurity(unittest.TestCase):
             self.assertFalse(is_safe_url('http://malicious.com/dashboard'))
             self.assertFalse(is_safe_url('javascript:alert(1)'))
             self.assertFalse(is_safe_url('//malicious.com'))
-            # Note: urlparse(urljoin('http://example.com/', '\\malicious.com')) parses to
-            # scheme='http', netloc='example.com', path='/\\malicious.com'.
-            # Therefore it is technically safe according to this function, as it won't redirect
-            # to another domain.
+            self.assertFalse(is_safe_url('///malicious.com'))
+            self.assertFalse(is_safe_url('   ///malicious.com'))
+            self.assertFalse(is_safe_url('\\\\\\malicious.com'))
 
 if __name__ == '__main__':
     unittest.main()

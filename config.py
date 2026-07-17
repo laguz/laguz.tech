@@ -18,5 +18,5 @@ class Config:
     TRADIER_API_BASE_URL = "https://sandbox.tradier.com/v1" # Use sandbox for development
     TRADIER_ACCESS_TOKEN = os.environ.get('TRADIER_ACCESS_TOKEN')
     TRADIER_ACCOUNT_ID = os.environ.get('TRADIER_ACCOUNT_ID')
-    TRADIER_LIVE_TRADING = os.environ.get('TRADIER_LIVE_TRADING')
+    TRADIER_LIVE_TRADING = os.environ.get('TRADIER_LIVE_TRADING', 'False').lower() in ['true', '1', 't']
     DEBUG = os.environ.get('FLASK_DEBUG', 'False').lower() in ['true', '1', 't']

@@ -68,7 +68,9 @@ def load_user(user_id):
 
 def is_safe_url(target):
     ref_url = urlparse(request.host_url)
-    target_clean = target.replace('\\', '/')
+    target_clean = target.strip().replace('\\', '/')
+    if target_clean.startswith('//'):
+        return False
     test_url = urlparse(urljoin(request.host_url, target_clean))
     return test_url.scheme in ('http', 'https') and \
            ref_url.netloc == test_url.netloc
@@ -207,6 +209,26 @@ def dashboard():
                                pnl_values=[])
 
 
+def _handle_equity_trade(symbol, side, quantity, order_type, duration, price):
+    return tradier_equity_order.order(
+        symbol=symbol,
+        side=side,
+        quantity=quantity,
+        order_type=order_type,
+        duration=duration,
+        price=float(price) if price else None
+    )
+
+def _handle_option_trade(option_symbol, side, quantity, order_type, duration, price):
+    return tradier_options_order.options_order(
+        occ_symbol=option_symbol,
+        side=side,
+        quantity=quantity,
+        order_type=order_type,
+        duration=duration,
+        price=float(price) if price else None
+    )
+
 @app.route('/trade', methods=['GET', 'POST'])
 @login_required
 def trade():
@@ -237,26 +259,26 @@ def trade():
 
             order_response = None
             if trade_type == 'equity':
-                order_response = user_equity_order.order(
+                order_response = _handle_equity_trade(
                     symbol=symbol,
                     side=side,
                     quantity=quantity,
                     order_type=order_type,
                     duration=duration,
-                    price=float(price) if price else None
+                    price=price
                 )
             elif trade_type == 'option':
                 if not option_symbol:
                     flash('Option symbol is required for options trades.', 'danger')
                     return render_template('trade.html')
 
-                order_response = user_options_order.options_order(
-                    occ_symbol=option_symbol,
+                order_response = _handle_option_trade(
+                    option_symbol=option_symbol,
                     side=side,
                     quantity=quantity,
                     order_type=order_type,
                     duration=duration,
-                    price=float(price) if price else None
+                    price=price
                 )
 
             if order_response and order_response.get('orders') and order_response['orders'].get('order') and order_response['orders']['order'].get('status') == 'ok':
@@ -330,7 +352,13 @@ def update_pnl_snapshot():
         pnl_snapshots = []
         now = datetime.now()
 
-        for user_doc in users_collection.find({}):
+        query = {
+            'tradier_account_id': {'$exists': True, '$ne': None},
+            'tradier_access_token': {'$exists': True, '$ne': None}
+        }
+        projection = {'_id': 1, 'tradier_account_id': 1, 'tradier_access_token': 1}
+
+        for user_doc in users_collection.find(query, projection):
             user_tradier_account_id = user_doc.get('tradier_account_id')
             user_tradier_access_token = user_doc.get('tradier_access_token')
 

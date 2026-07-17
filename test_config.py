@@ -56,8 +56,36 @@ class TestConfig(unittest.TestCase):
             self.assertEqual(Config.MONGO_URI, "mongodb://localhost:27017/test_db")
             self.assertEqual(Config.TRADIER_ACCESS_TOKEN, "test_token")
             self.assertEqual(Config.TRADIER_ACCOUNT_ID, "test_account")
-            self.assertEqual(Config.TRADIER_LIVE_TRADING, "false")
+            self.assertFalse(Config.TRADIER_LIVE_TRADING)
             self.assertTrue(Config.DEBUG)
+
+    def test_tradier_live_trading_parsing(self):
+        # Test various values for TRADIER_LIVE_TRADING
+        test_cases = [
+            ("True", True),
+            ("true", True),
+            ("1", True),
+            ("t", True),
+            ("False", False),
+            ("false", False),
+            ("0", False),
+            ("random", False),
+            ("", False)
+        ]
+
+        base_env = {
+            "SECRET_KEY": "test_secret",
+            "MONGO_URI": "mongodb://localhost:27017/test_db"
+        }
+
+        for val, expected in test_cases:
+            env = base_env.copy()
+            env["TRADIER_LIVE_TRADING"] = val
+
+            with patch.dict(os.environ, env, clear=True):
+                importlib.reload(config)
+                from config import Config
+                self.assertEqual(Config.TRADIER_LIVE_TRADING, expected, f"Failed for TRADIER_LIVE_TRADING='{val}'")
 
     def test_debug_parsing(self):
         # Test various values for FLASK_DEBUG
