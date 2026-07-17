@@ -53,6 +53,8 @@ class User(UserMixin):
         self.id = str(user_data['_id'])
         self.username = user_data['username']
         self.password_hash = user_data['password']
+        self.tradier_account_id = user_data.get('tradier_account_id')
+        self.tradier_access_token = user_data.get('tradier_access_token')
 
     def get_id(self):
         return self.id
@@ -226,9 +228,16 @@ def trade():
         option_symbol = request.form.get('option_symbol') # For options
 
         try:
+            if not current_user.tradier_account_id or not current_user.tradier_access_token:
+                flash('You must configure your Tradier account credentials to trade.', 'danger')
+                return render_template('trade.html')
+
+            user_equity_order = EquityOrder(current_user.tradier_account_id, current_user.tradier_access_token, live_trade=tradier_live_trading)
+            user_options_order = OptionsOrder(current_user.tradier_account_id, current_user.tradier_access_token, live_trade=tradier_live_trading)
+
             order_response = None
             if trade_type == 'equity':
-                order_response = tradier_equity_order.order(
+                order_response = user_equity_order.order(
                     symbol=symbol,
                     side=side,
                     quantity=quantity,
@@ -241,7 +250,7 @@ def trade():
                     flash('Option symbol is required for options trades.', 'danger')
                     return render_template('trade.html')
 
-                order_response = tradier_options_order.options_order(
+                order_response = user_options_order.options_order(
                     occ_symbol=option_symbol,
                     side=side,
                     quantity=quantity,

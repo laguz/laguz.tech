@@ -32,7 +32,9 @@ class BaseTestCase(unittest.TestCase):
         self.user_id = self.mock_users.insert_one({
             'username': self.test_username,
             'email': 'testuser@example.com',
-            'password': generate_password_hash(self.test_password)
+            'password': generate_password_hash(self.test_password),
+            'tradier_account_id': 'test_account',
+            'tradier_access_token': 'test_token'
         }).inserted_id
 
     def tearDown(self):
