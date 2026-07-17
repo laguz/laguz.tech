@@ -343,7 +343,13 @@ def update_pnl_snapshot():
         pnl_snapshots = []
         now = datetime.now()
 
-        for user_doc in users_collection.find({}):
+        query = {
+            'tradier_account_id': {'$exists': True, '$ne': None},
+            'tradier_access_token': {'$exists': True, '$ne': None}
+        }
+        projection = {'_id': 1, 'tradier_account_id': 1, 'tradier_access_token': 1}
+
+        for user_doc in users_collection.find(query, projection):
             user_tradier_account_id = user_doc.get('tradier_account_id')
             user_tradier_access_token = user_doc.get('tradier_access_token')
 
