@@ -32,13 +32,15 @@ class TestTrade(unittest.TestCase):
         self.user_id = self.mock_users.insert_one({
             'username': self.test_username,
             'email': 'testuser@example.com',
-            'password': generate_password_hash(self.test_password)
+            'password': generate_password_hash(self.test_password),
+            'tradier_account_id': 'test_user_account',
+            'tradier_access_token': 'test_user_token'
         }).inserted_id
 
-        self.patcher_equity_order = patch('app.tradier_equity_order.order')
+        self.patcher_equity_order = patch('app.EquityOrder.order')
         self.mock_equity_order = self.patcher_equity_order.start()
 
-        self.patcher_options_order = patch('app.tradier_options_order.options_order')
+        self.patcher_options_order = patch('app.OptionsOrder.options_order')
         self.mock_options_order = self.patcher_options_order.start()
 
     def tearDown(self):
@@ -138,6 +140,30 @@ class TestTrade(unittest.TestCase):
         })
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'Invalid quantity. Quantity must be a positive integer.', response.data)
+        self.mock_equity_order.assert_not_called()
+
+    def test_trade_missing_credentials(self):
+        # Create a user without Tradier credentials
+        no_cred_username = 'nocreduser'
+        no_cred_password = 'password123'
+        self.mock_users.insert_one({
+            'username': no_cred_username,
+            'email': 'nocreduser@example.com',
+            'password': generate_password_hash(no_cred_password)
+        })
+        self.client.post('/login', data={'username': no_cred_username, 'password': no_cred_password})
+
+        response = self.client.post('/trade', data={
+            'trade_type': 'equity',
+            'symbol': 'aapl',
+            'side': 'buy',
+            'quantity': '10',
+            'order_type': 'market',
+            'duration': 'day',
+            'price': ''
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'You must configure your Tradier account credentials to trade.', response.data)
         self.mock_equity_order.assert_not_called()
 
 if __name__ == '__main__':
