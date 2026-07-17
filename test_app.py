@@ -152,5 +152,39 @@ class TestApp(unittest.TestCase):
 
         # Exception should be caught by app.logger.exception in app.py, testing it doesn't crash
 
+    @patch('app.update_pnl_snapshot')
+    def test_manual_pnl_update_success(self, mock_update_pnl_snapshot):
+        # login
+        self.client.post('/login', data={
+            'username': self.test_username,
+            'password': self.test_password
+        })
+
+        response = self.client.get('/update_pnl_manual', follow_redirects=False)
+        self.assertEqual(response.status_code, 302)
+
+        # follow redirect
+        response_redirect = self.client.get(response.location)
+        self.assertIn(b'P&amp;L snapshot updated.', response_redirect.data)
+        mock_update_pnl_snapshot.assert_called_once()
+
+    @patch('app.update_pnl_snapshot')
+    def test_manual_pnl_update_exception(self, mock_update_pnl_snapshot):
+        mock_update_pnl_snapshot.side_effect = Exception("Test P&L error")
+
+        # login
+        self.client.post('/login', data={
+            'username': self.test_username,
+            'password': self.test_password
+        })
+
+        response = self.client.get('/update_pnl_manual', follow_redirects=False)
+        self.assertEqual(response.status_code, 302)
+
+        # follow redirect
+        response_redirect = self.client.get(response.location)
+        self.assertIn(b'Error updating P&amp;L snapshot: Test P&amp;L error', response_redirect.data)
+        mock_update_pnl_snapshot.assert_called_once()
+
 if __name__ == '__main__':
     unittest.main()
