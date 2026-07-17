@@ -1,3 +1,4 @@
+import cachetools.func
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -8,6 +9,7 @@ from urllib.parse import urlparse, urljoin
 import concurrent.futures
 
 import requests
+import cachetools.func
 from uvatradier import Tradier, Account, Quotes, OptionsData, EquityOrder, OptionsOrder
 from config import Config
 from flask_wtf.csrf import CSRFProtect
@@ -208,9 +210,16 @@ def dashboard():
 def trade():
     if request.method == 'POST':
         trade_type = request.form.get('trade_type')
-        symbol = request.form.get('symbol').upper()
+        symbol = request.form.get('symbol').upper() if request.form.get('symbol') else ''
         side = request.form.get('side')
-        quantity = int(request.form.get('quantity'))
+        try:
+            quantity = int(request.form.get('quantity'))
+            if quantity <= 0:
+                raise ValueError("Quantity must be positive.")
+        except (TypeError, ValueError):
+            flash('Invalid quantity. Quantity must be a positive integer.', 'danger')
+            return render_template('trade.html')
+
         order_type = request.form.get('order_type')
         duration = request.form.get('duration')
         price = request.form.get('price') # For limit orders
@@ -310,25 +319,27 @@ def get_option_chain(symbol):
 def update_pnl_snapshot():
     with app.app_context(): # Ensure app context for database operations
         pnl_snapshots = []
-        user_ids = [str(user_doc['_id']) for user_doc in users_collection.find({}, {'_id': 1})]
+        now = datetime.now()
 
-        try:
-            tradier_account_instance = Account(tradier_account_id, tradier_access_token, live_trade=tradier_live_trading)
-            account_balance = tradier_account_instance.get_account_balance()
-            current_pnl = account_balance.get('realized_gain_loss', 0) + account_balance.get('unrealized_gain_loss', 0)
-            total_equity = account_balance.get('total_equity', 0)
-            now = datetime.now()
+        for user_doc in users_collection.find({}):
+            user_tradier_account_id = user_doc.get('tradier_account_id')
+            user_tradier_access_token = user_doc.get('tradier_access_token')
 
-            for user_id in user_ids:
-                pnl_snapshots.append({
-                    'user_id': user_id,
-                    'date': now,
-                    'pnl': current_pnl,
-                    'total_equity': total_equity
-                })
-        except Exception as e:
-            app.logger.exception("Error preparing global P&L")
-            return
+            if user_tradier_account_id and user_tradier_access_token:
+                try:
+                    tradier_account_instance = Account(user_tradier_account_id, user_tradier_access_token, live_trade=tradier_live_trading)
+                    account_balance = tradier_account_instance.get_account_balance()
+                    current_pnl = account_balance.get('realized_gain_loss', 0) + account_balance.get('unrealized_gain_loss', 0)
+                    total_equity = account_balance.get('total_equity', 0)
+
+                    pnl_snapshots.append({
+                        'user_id': str(user_doc['_id']),
+                        'date': now,
+                        'pnl': current_pnl,
+                        'total_equity': total_equity
+                    })
+                except Exception as e:
+                    app.logger.exception(f"Error preparing P&L for user {user_doc['_id']}")
 
         if pnl_snapshots:
             try:

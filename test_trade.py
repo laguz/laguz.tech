@@ -125,5 +125,20 @@ class TestTrade(unittest.TestCase):
         self.assertIn(b'Failed to place order. Errors: Invalid symbol', response.data)
         self.assertEqual(self.mock_trades.count_documents({}), 0)
 
+    def test_trade_invalid_quantity(self):
+        self.login()
+        response = self.client.post('/trade', data={
+            'trade_type': 'equity',
+            'symbol': 'aapl',
+            'side': 'buy',
+            'quantity': '-10',
+            'order_type': 'market',
+            'duration': 'day',
+            'price': ''
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Invalid quantity. Quantity must be a positive integer.', response.data)
+        self.mock_equity_order.assert_not_called()
+
 if __name__ == '__main__':
     unittest.main()
