@@ -14,7 +14,11 @@ import benchmark_pnl
 class TestBenchmarkPnl(unittest.TestCase):
     def setUp(self):
         benchmark_pnl.app.users_collection.find = MagicMock(return_value=[
-            {'_id': f'user_{i}'} for i in range(2)
+            {
+                '_id': f'user_{i}',
+                'tradier_account_id': f'account_{i}',
+                'tradier_access_token': f'token_{i}'
+            } for i in range(2)
         ])
 
     @patch('benchmark_pnl.time.sleep')
@@ -77,7 +81,8 @@ class TestBenchmarkPnl(unittest.TestCase):
     def test_proposed_update_pnl_snapshot_exception(self, mock_print, mock_account_cls):
         mock_account_cls.side_effect = Exception("API error")
         benchmark_pnl.proposed_update_pnl_snapshot()
-        mock_print.assert_called_with("Error fetching global account balance: API error")
+        mock_print.assert_any_call("Error preparing P&L for user user_0: API error")
+        mock_print.assert_any_call("Error preparing P&L for user user_1: API error")
 
     @patch('benchmark_pnl.run_current_benchmark')
     @patch('benchmark_pnl.run_proposed_benchmark')
