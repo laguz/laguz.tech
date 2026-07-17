@@ -8,6 +8,7 @@ from urllib.parse import urlparse, urljoin
 import concurrent.futures
 
 import requests
+import cachetools.func
 from uvatradier import Tradier, Account, Quotes, OptionsData, EquityOrder, OptionsOrder
 from config import Config
 from flask_wtf.csrf import CSRFProtect
@@ -208,9 +209,16 @@ def dashboard():
 def trade():
     if request.method == 'POST':
         trade_type = request.form.get('trade_type')
-        symbol = request.form.get('symbol').upper()
+        symbol = request.form.get('symbol').upper() if request.form.get('symbol') else ''
         side = request.form.get('side')
-        quantity = int(request.form.get('quantity'))
+        try:
+            quantity = int(request.form.get('quantity'))
+            if quantity <= 0:
+                raise ValueError("Quantity must be positive.")
+        except (TypeError, ValueError):
+            flash('Invalid quantity. Quantity must be a positive integer.', 'danger')
+            return render_template('trade.html')
+
         order_type = request.form.get('order_type')
         duration = request.form.get('duration')
         price = request.form.get('price') # For limit orders
