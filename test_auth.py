@@ -87,6 +87,24 @@ class TestAuth(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.location.endswith('/dashboard'))
 
+    def test_logout_success(self):
+        # First, log in the user
+        self.client.post('/login', data={
+            'username': self.test_username,
+            'password': self.test_password
+        })
+
+        # Test logging out
+        response = self.client.get('/logout', follow_redirects=False)
+
+        # Verify redirect to login
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.location.endswith('/login'))
+
+        # Follow redirect to verify flash message
+        response_redirect = self.client.get(response.location)
+        self.assertIn(b'You have been logged out.', response_redirect.data)
+
     def test_register_password_mismatch(self):
         # Test password and confirm_password mismatch
         response = self.client.post('/register', data={
