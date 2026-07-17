@@ -14,7 +14,11 @@ import app
 
 # Mock the database
 app.users_collection.find = MagicMock(return_value=[
-    {'_id': f'user_{i}'} for i in range(100)
+    {
+        '_id': f'user_{i}',
+        'tradier_account_id': f'account_{i}',
+        'tradier_access_token': f'token_{i}'
+    } for i in range(100)
 ])
 
 # Mock the Tradier API to simulate a 100ms response time
@@ -40,31 +44,31 @@ def run_current_benchmark(mock_insert, mock_api):
 def proposed_update_pnl_snapshot():
     with app.app.app_context():
         pnl_snapshots = []
-        user_ids = [str(user_doc['_id']) for user_doc in app.users_collection.find({})]
+        now = app.datetime.now()
 
-        # O(1) API call
-        try:
-            tradier_account_instance = app.Account(app.tradier_account_id, app.tradier_access_token, live_trade=app.tradier_live_trading)
-            account_balance = tradier_account_instance.get_account_balance()
-            current_pnl = account_balance.get('realized_gain_loss', 0) + account_balance.get('unrealized_gain_loss', 0)
-            total_equity = account_balance.get('total_equity', 0)
-            now = app.datetime.now()
+        for user_doc in app.users_collection.find({}):
+            user_tradier_account_id = user_doc.get('tradier_account_id')
+            user_tradier_access_token = user_doc.get('tradier_access_token')
 
-            for user_id in user_ids:
-                pnl_snapshots.append({
-                    'user_id': user_id,
-                    'date': now,
-                    'pnl': current_pnl,
-                    'total_equity': total_equity
-                })
-        except Exception as e:
-            print(f"Error fetching global account balance: {e}")
-            return
+            if user_tradier_account_id and user_tradier_access_token:
+                try:
+                    tradier_account_instance = app.Account(user_tradier_account_id, user_tradier_access_token, live_trade=app.tradier_live_trading)
+                    account_balance = tradier_account_instance.get_account_balance()
+                    current_pnl = account_balance.get('realized_gain_loss', 0) + account_balance.get('unrealized_gain_loss', 0)
+                    total_equity = account_balance.get('total_equity', 0)
+
+                    pnl_snapshots.append({
+                        'user_id': str(user_doc['_id']),
+                        'date': now,
+                        'pnl': current_pnl,
+                        'total_equity': total_equity
+                    })
+                except Exception as e:
+                    print(f"Error preparing P&L for user {user_doc['_id']}: {e}")
 
         if pnl_snapshots:
             try:
                 app.pnl_collection.insert_many(pnl_snapshots)
-                # print(f"P&L snapshots updated for {len(pnl_snapshots)} users.")
             except Exception as e:
                 print(f"Error inserting P&L snapshots: {e}")
 
