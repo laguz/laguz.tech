@@ -324,6 +324,7 @@ def _handle_api_error(e, action, symbol):
 
 @app.route('/get_quote/<symbol>')
 @login_required
+@cachetools.func.ttl_cache(maxsize=128, ttl=60)
 def get_quote(symbol):
     try:
         quote_data = tradier_quotes.get_quote_data([symbol])
