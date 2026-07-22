@@ -311,6 +311,10 @@ def trade():
 
     return render_template('trade.html')
 
+def _handle_api_error(e, action, symbol):
+    app.logger.exception(f"An unexpected error occurred while getting {action} for {symbol}")
+    return {'error': str(e)}, 500
+
 @app.route('/get_quote/<symbol>')
 @login_required
 def get_quote(symbol):
@@ -330,8 +334,7 @@ def get_quote(symbol):
             }
         return {'error': 'Quote not found'}, 404
     except Exception as e:
-        app.logger.exception(f"An unexpected error occurred while getting quote for {symbol}")
-        return {'error': str(e)}, 500
+        return _handle_api_error(e, "quote", symbol)
 
 @app.route('/get_option_chain/<symbol>')
 @login_required
@@ -343,8 +346,7 @@ def get_option_chain(symbol):
             return {'options': option_chain['options']['option']}
         return {'error': 'Option chain not found'}, 404
     except Exception as e:
-        app.logger.exception(f"An unexpected error occurred while getting option chain for {symbol}")
-        return {'error': str(e)}, 500
+        return _handle_api_error(e, "option chain", symbol)
 
 # Helper to update P&L snapshot (can be a scheduled task in a real app)
 def update_pnl_snapshot():
