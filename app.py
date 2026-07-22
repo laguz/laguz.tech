@@ -71,6 +71,11 @@ def is_safe_url(target):
     target_clean = target.strip().replace('\\', '/')
     if target_clean.startswith('//'):
         return False
+
+    target_parsed = urlparse(target_clean)
+    if target_parsed.scheme and not target_parsed.netloc:
+        return False
+
     test_url = urlparse(urljoin(request.host_url, target_clean))
     return test_url.scheme in ('http', 'https') and \
            ref_url.netloc == test_url.netloc

@@ -74,6 +74,7 @@ class TestSecurity(unittest.TestCase):
             # Unsafe URLs
             self.assertFalse(is_safe_url('http://malicious.com/dashboard'))
             self.assertFalse(is_safe_url('javascript:alert(1)'))
+            self.assertFalse(is_safe_url('http:malicious.com'))
             self.assertFalse(is_safe_url('//malicious.com'))
             self.assertFalse(is_safe_url('///malicious.com'))
             self.assertFalse(is_safe_url('   ///malicious.com'))
