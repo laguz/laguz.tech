@@ -1,5 +1,6 @@
 import unittest
 import os
+import requests
 from unittest.mock import patch
 import mongomock
 from werkzeug.security import generate_password_hash
@@ -165,6 +166,38 @@ class TestTrade(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'You must configure your Tradier account credentials to trade.', response.data)
         self.mock_equity_order.assert_not_called()
+
+    @patch('app.app.logger.exception')
+    def test_trade_generic_exception(self, mock_logger):
+        self.login()
+        self.mock_equity_order.side_effect = Exception("Test generic exception")
+        response = self.client.post('/trade', data={
+            'trade_type': 'equity',
+            'symbol': 'aapl',
+            'side': 'buy',
+            'quantity': '10',
+            'order_type': 'market',
+            'duration': 'day',
+            'price': ''
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'An error occurred: Test generic exception', response.data)
+        mock_logger.assert_called_with("An unexpected error occurred during trade")
+
+    def test_trade_request_exception(self):
+        self.login()
+        self.mock_equity_order.side_effect = requests.exceptions.RequestException("Test request exception")
+        response = self.client.post('/trade', data={
+            'trade_type': 'equity',
+            'symbol': 'aapl',
+            'side': 'buy',
+            'quantity': '10',
+            'order_type': 'market',
+            'duration': 'day',
+            'price': ''
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Error communicating with Tradier API: Test request exception', response.data)
 
 if __name__ == '__main__':
     unittest.main()
