@@ -10,7 +10,11 @@ os.environ['TRADIER_ACCESS_TOKEN'] = 'test_token'
 os.environ['TRADIER_ACCOUNT_ID'] = 'test_account'
 os.environ['TRADIER_LIVE_TRADING'] = 'false'
 
+import requests
 import app
+
+class MockRequestException(requests.exceptions.RequestException):
+    pass
 
 class TestTrade(unittest.TestCase):
     @classmethod
@@ -165,6 +169,22 @@ class TestTrade(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'You must configure your Tradier account credentials to trade.', response.data)
         self.mock_equity_order.assert_not_called()
+
+    def test_trade_request_exception(self):
+        self.login()
+        self.mock_equity_order.side_effect = MockRequestException("Mock API error")
+        response = self.client.post('/trade', data={
+            'trade_type': 'equity',
+            'symbol': 'aapl',
+            'side': 'buy',
+            'quantity': '10',
+            'order_type': 'market',
+            'duration': 'day',
+            'price': ''
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Error communicating with Tradier API: Mock API error', response.data)
+        self.assertEqual(self.mock_trades.count_documents({}), 0)
 
 if __name__ == '__main__':
     unittest.main()
