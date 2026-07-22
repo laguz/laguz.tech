@@ -13,10 +13,13 @@ import cachetools.func
 from uvatradier import Tradier, Account, Quotes, OptionsData, EquityOrder, OptionsOrder
 from config import Config
 from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 app = Flask(__name__)
 app.config.from_object(Config)
 csrf = CSRFProtect(app)
+limiter = Limiter(get_remote_address, app=app, default_limits=[])
 
 # MongoDB setup
 client = MongoClient(app.config['MONGO_URI'])
@@ -88,6 +91,7 @@ def handle_route_exception(e, route_name):
 
 @app.route('/')
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
