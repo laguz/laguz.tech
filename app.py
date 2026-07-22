@@ -348,6 +348,27 @@ def get_option_chain(symbol):
 
 # Helper to update P&L snapshot (can be a scheduled task in a real app)
 def update_pnl_snapshot():
+    def process_user_pnl(user_doc, now):
+        user_tradier_account_id = user_doc.get('tradier_account_id')
+        user_tradier_access_token = user_doc.get('tradier_access_token')
+
+        if user_tradier_account_id and user_tradier_access_token:
+            try:
+                tradier_account_instance = Account(user_tradier_account_id, user_tradier_access_token, live_trade=tradier_live_trading)
+                account_balance = tradier_account_instance.get_account_balance()
+                current_pnl = account_balance.get('realized_gain_loss', 0) + account_balance.get('unrealized_gain_loss', 0)
+                total_equity = account_balance.get('total_equity', 0)
+
+                return {
+                    'user_id': str(user_doc['_id']),
+                    'date': now,
+                    'pnl': current_pnl,
+                    'total_equity': total_equity
+                }
+            except Exception as e:
+                app.logger.exception(f"Error preparing P&L for user {user_doc['_id']}")
+        return None
+
     with app.app_context(): # Ensure app context for database operations
         pnl_snapshots = []
         now = datetime.now()
@@ -358,25 +379,14 @@ def update_pnl_snapshot():
         }
         projection = {'_id': 1, 'tradier_account_id': 1, 'tradier_access_token': 1}
 
-        for user_doc in users_collection.find(query, projection):
-            user_tradier_account_id = user_doc.get('tradier_account_id')
-            user_tradier_access_token = user_doc.get('tradier_access_token')
+        user_docs = list(users_collection.find(query, projection))
 
-            if user_tradier_account_id and user_tradier_access_token:
-                try:
-                    tradier_account_instance = Account(user_tradier_account_id, user_tradier_access_token, live_trade=tradier_live_trading)
-                    account_balance = tradier_account_instance.get_account_balance()
-                    current_pnl = account_balance.get('realized_gain_loss', 0) + account_balance.get('unrealized_gain_loss', 0)
-                    total_equity = account_balance.get('total_equity', 0)
-
-                    pnl_snapshots.append({
-                        'user_id': str(user_doc['_id']),
-                        'date': now,
-                        'pnl': current_pnl,
-                        'total_equity': total_equity
-                    })
-                except Exception as e:
-                    app.logger.exception(f"Error preparing P&L for user {user_doc['_id']}")
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = [executor.submit(process_user_pnl, doc, now) for doc in user_docs]
+            for future in concurrent.futures.as_completed(futures):
+                result = future.result()
+                if result:
+                    pnl_snapshots.append(result)
 
         if pnl_snapshots:
             try:
