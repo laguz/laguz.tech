@@ -75,6 +75,15 @@ def is_safe_url(target):
     return test_url.scheme in ('http', 'https') and \
            ref_url.netloc == test_url.netloc
 
+def handle_route_exception(e, route_name):
+    if isinstance(e, requests.exceptions.RequestException):
+        msg = f"Error connecting to Tradier API: {e}" if route_name == 'dashboard' else f"Error communicating with Tradier API: {e}"
+        flash(msg, 'danger')
+    else:
+        app.logger.exception(f"An unexpected error occurred {'in dashboard' if route_name == 'dashboard' else 'during trade'}")
+        msg = f"An unexpected error occurred: {e}" if route_name == 'dashboard' else f"An error occurred: {e}"
+        flash(msg, 'danger')
+
 # --- Routes ---
 
 @app.route('/')
@@ -182,21 +191,8 @@ def dashboard():
                                pnl_dates=pnl_dates,
                                pnl_values=pnl_values)
 
-    except requests.exceptions.RequestException as e:
-        flash(f"Error connecting to Tradier API: {e}", 'danger')
-        return render_template('dashboard.html',
-                               account_balance={},
-                               positions=[],
-                               gain_loss={},
-                               total_equity=0,
-                               pnl_today=0,
-                               pnl_total=0,
-                               recent_trades=[],
-                               pnl_dates=[],
-                               pnl_values=[])
     except Exception as e:
-        app.logger.exception("An unexpected error occurred in dashboard")
-        flash(f"An unexpected error occurred: {e}", 'danger')
+        handle_route_exception(e, 'dashboard')
         return render_template('dashboard.html',
                                account_balance={},
                                positions=[],
@@ -303,11 +299,8 @@ def trade():
                     error_message += f" Errors: {order_response['errors']['error']}"
                 flash(error_message, 'danger')
 
-        except requests.exceptions.RequestException as e:
-            flash(f"Error communicating with Tradier API: {e}", 'danger')
         except Exception as e:
-            app.logger.exception("An unexpected error occurred during trade")
-            flash(f"An error occurred: {e}", 'danger')
+            handle_route_exception(e, 'trade')
 
     return render_template('trade.html')
 
