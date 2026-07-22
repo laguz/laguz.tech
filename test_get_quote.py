@@ -2,6 +2,9 @@ import unittest
 import json
 from unittest.mock import patch
 from test_base import BaseTestCase
+import requests
+class MockRequestException(requests.exceptions.RequestException):
+    pass
 
 class TestGetQuote(BaseTestCase):
 
