@@ -14,7 +14,7 @@ os.environ['TRADIER_LIVE_TRADING'] = 'False'
 from bson.objectid import ObjectId
 
 # Import app after environment variables are set
-from app import app, users_collection, load_user
+from app import app, users_collection, load_user, limiter
 
 class TestAuth(unittest.TestCase):
     @classmethod
@@ -41,6 +41,7 @@ class TestAuth(unittest.TestCase):
 
     def tearDown(self):
         self.patcher.stop()
+        limiter.reset()
 
     def test_login_success(self):
         # Test valid login credentials
@@ -151,6 +152,22 @@ class TestAuth(unittest.TestCase):
         loaded_user = load_user(invalid_id)
 
         self.assertIsNone(loaded_user)
+
+    def test_login_rate_limiting(self):
+        # We should be able to request 5 times without getting 429
+        for _ in range(5):
+            response = self.client.post('/login', data={
+                'username': self.test_username,
+                'password': self.test_password
+            }, follow_redirects=False)
+            self.assertEqual(response.status_code, 302)
+
+        # The 6th time should give a 429 Too Many Requests
+        response = self.client.post('/login', data={
+            'username': self.test_username,
+            'password': self.test_password
+        }, follow_redirects=False)
+        self.assertEqual(response.status_code, 429)
 
 if __name__ == '__main__':
     unittest.main()

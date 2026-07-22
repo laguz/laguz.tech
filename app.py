@@ -14,10 +14,13 @@ import cachetools.func
 from uvatradier import Tradier, Account, Quotes, OptionsData, EquityOrder, OptionsOrder
 from config import Config
 from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 app = Flask(__name__)
 app.config.from_object(Config)
 csrf = CSRFProtect(app)
+limiter = Limiter(get_remote_address, app=app, default_limits=[])
 
 # MongoDB setup
 client = MongoClient(app.config['MONGO_URI'])
@@ -76,21 +79,20 @@ def is_safe_url(target):
     return test_url.scheme in ('http', 'https') and \
            ref_url.netloc == test_url.netloc
 
-def is_password_strong(password):
-    if len(password) < 8:
-        return False
-    if not re.search(r"[a-z]", password):
-        return False
-    if not re.search(r"[A-Z]", password):
-        return False
-    if not re.search(r"[0-9]", password):
-        return False
-    return True
+def handle_route_exception(e, route_name):
+    if isinstance(e, requests.exceptions.RequestException):
+        msg = f"Error connecting to Tradier API: {e}" if route_name == 'dashboard' else f"Error communicating with Tradier API: {e}"
+        flash(msg, 'danger')
+    else:
+        app.logger.exception(f"An unexpected error occurred {'in dashboard' if route_name == 'dashboard' else 'during trade'}")
+        msg = f"An unexpected error occurred: {e}" if route_name == 'dashboard' else f"An error occurred: {e}"
+        flash(msg, 'danger')
 
 # --- Routes ---
 
 @app.route('/')
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
@@ -198,21 +200,8 @@ def dashboard():
                                pnl_dates=pnl_dates,
                                pnl_values=pnl_values)
 
-    except requests.exceptions.RequestException as e:
-        flash(f"Error connecting to Tradier API: {e}", 'danger')
-        return render_template('dashboard.html',
-                               account_balance={},
-                               positions=[],
-                               gain_loss={},
-                               total_equity=0,
-                               pnl_today=0,
-                               pnl_total=0,
-                               recent_trades=[],
-                               pnl_dates=[],
-                               pnl_values=[])
     except Exception as e:
-        app.logger.exception("An unexpected error occurred in dashboard")
-        flash(f"An unexpected error occurred: {e}", 'danger')
+        handle_route_exception(e, 'dashboard')
         return render_template('dashboard.html',
                                account_balance={},
                                positions=[],
@@ -319,13 +308,14 @@ def trade():
                     error_message += f" Errors: {order_response['errors']['error']}"
                 flash(error_message, 'danger')
 
-        except requests.exceptions.RequestException as e:
-            flash(f"Error communicating with Tradier API: {e}", 'danger')
         except Exception as e:
-            app.logger.exception("An unexpected error occurred during trade")
-            flash(f"An error occurred: {e}", 'danger')
+            handle_route_exception(e, 'trade')
 
     return render_template('trade.html')
+
+def _handle_api_error(e, action, symbol):
+    app.logger.exception(f"An unexpected error occurred while getting {action} for {symbol}")
+    return {'error': str(e)}, 500
 
 @app.route('/get_quote/<symbol>')
 @login_required
@@ -346,8 +336,7 @@ def get_quote(symbol):
             }
         return {'error': 'Quote not found'}, 404
     except Exception as e:
-        app.logger.exception(f"An unexpected error occurred while getting quote for {symbol}")
-        return {'error': str(e)}, 500
+        return _handle_api_error(e, "quote", symbol)
 
 @app.route('/get_option_chain/<symbol>')
 @login_required
@@ -359,11 +348,31 @@ def get_option_chain(symbol):
             return {'options': option_chain['options']['option']}
         return {'error': 'Option chain not found'}, 404
     except Exception as e:
-        app.logger.exception(f"An unexpected error occurred while getting option chain for {symbol}")
-        return {'error': str(e)}, 500
+        return _handle_api_error(e, "option chain", symbol)
 
 # Helper to update P&L snapshot (can be a scheduled task in a real app)
 def update_pnl_snapshot():
+    def process_user_pnl(user_doc, now):
+        user_tradier_account_id = user_doc.get('tradier_account_id')
+        user_tradier_access_token = user_doc.get('tradier_access_token')
+
+        if user_tradier_account_id and user_tradier_access_token:
+            try:
+                tradier_account_instance = Account(user_tradier_account_id, user_tradier_access_token, live_trade=tradier_live_trading)
+                account_balance = tradier_account_instance.get_account_balance()
+                current_pnl = account_balance.get('realized_gain_loss', 0) + account_balance.get('unrealized_gain_loss', 0)
+                total_equity = account_balance.get('total_equity', 0)
+
+                return {
+                    'user_id': str(user_doc['_id']),
+                    'date': now,
+                    'pnl': current_pnl,
+                    'total_equity': total_equity
+                }
+            except Exception as e:
+                app.logger.exception(f"Error preparing P&L for user {user_doc['_id']}")
+        return None
+
     with app.app_context(): # Ensure app context for database operations
         pnl_snapshots = []
         now = datetime.now()
@@ -374,25 +383,14 @@ def update_pnl_snapshot():
         }
         projection = {'_id': 1, 'tradier_account_id': 1, 'tradier_access_token': 1}
 
-        for user_doc in users_collection.find(query, projection):
-            user_tradier_account_id = user_doc.get('tradier_account_id')
-            user_tradier_access_token = user_doc.get('tradier_access_token')
+        user_docs = list(users_collection.find(query, projection))
 
-            if user_tradier_account_id and user_tradier_access_token:
-                try:
-                    tradier_account_instance = Account(user_tradier_account_id, user_tradier_access_token, live_trade=tradier_live_trading)
-                    account_balance = tradier_account_instance.get_account_balance()
-                    current_pnl = account_balance.get('realized_gain_loss', 0) + account_balance.get('unrealized_gain_loss', 0)
-                    total_equity = account_balance.get('total_equity', 0)
-
-                    pnl_snapshots.append({
-                        'user_id': str(user_doc['_id']),
-                        'date': now,
-                        'pnl': current_pnl,
-                        'total_equity': total_equity
-                    })
-                except Exception as e:
-                    app.logger.exception(f"Error preparing P&L for user {user_doc['_id']}")
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = [executor.submit(process_user_pnl, doc, now) for doc in user_docs]
+            for future in concurrent.futures.as_completed(futures):
+                result = future.result()
+                if result:
+                    pnl_snapshots.append(result)
 
         if pnl_snapshots:
             try:

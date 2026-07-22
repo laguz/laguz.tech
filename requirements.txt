@@ -11,3 +11,4 @@ requests
 uvatradier
 mongomock
 cachetools
+Flask-Limiter
