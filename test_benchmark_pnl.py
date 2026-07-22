@@ -84,6 +84,21 @@ class TestBenchmarkPnl(unittest.TestCase):
         mock_print.assert_any_call("Error preparing P&L for user user_0: API error")
         mock_print.assert_any_call("Error preparing P&L for user user_1: API error")
 
+    @patch('benchmark_pnl.app.Account')
+    @patch('benchmark_pnl.app.pnl_collection.insert_many')
+    @patch('builtins.print')
+    def test_proposed_update_pnl_snapshot_insert_exception(self, mock_print, mock_insert, mock_account_cls):
+        mock_account = MagicMock()
+        mock_account_cls.return_value = mock_account
+        mock_account.get_account_balance.return_value = {
+            'realized_gain_loss': 10,
+            'unrealized_gain_loss': 20,
+            'total_equity': 1000
+        }
+        mock_insert.side_effect = Exception("Database error")
+        benchmark_pnl.proposed_update_pnl_snapshot()
+        mock_print.assert_any_call("Error inserting P&L snapshots: Database error")
+
     @patch('benchmark_pnl.run_current_benchmark')
     @patch('benchmark_pnl.run_proposed_benchmark')
     @patch('builtins.print')
