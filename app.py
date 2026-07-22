@@ -313,6 +313,7 @@ def trade():
 
 @app.route('/get_quote/<symbol>')
 @login_required
+@cachetools.func.ttl_cache(maxsize=128, ttl=60)
 def get_quote(symbol):
     try:
         quote_data = tradier_quotes.get_quote_data([symbol])
