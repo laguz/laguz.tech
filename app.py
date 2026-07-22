@@ -209,8 +209,8 @@ def dashboard():
                                pnl_values=[])
 
 
-def _handle_equity_trade(symbol, side, quantity, order_type, duration, price):
-    return tradier_equity_order.order(
+def _handle_equity_trade(equity_order_client, symbol, side, quantity, order_type, duration, price):
+    return equity_order_client.order(
         symbol=symbol,
         side=side,
         quantity=quantity,
@@ -219,8 +219,8 @@ def _handle_equity_trade(symbol, side, quantity, order_type, duration, price):
         price=float(price) if price else None
     )
 
-def _handle_option_trade(option_symbol, side, quantity, order_type, duration, price):
-    return tradier_options_order.options_order(
+def _handle_option_trade(options_order_client, option_symbol, side, quantity, order_type, duration, price):
+    return options_order_client.options_order(
         occ_symbol=option_symbol,
         side=side,
         quantity=quantity,
@@ -260,6 +260,7 @@ def trade():
             order_response = None
             if trade_type == 'equity':
                 order_response = _handle_equity_trade(
+                    equity_order_client=user_equity_order,
                     symbol=symbol,
                     side=side,
                     quantity=quantity,
@@ -273,6 +274,7 @@ def trade():
                     return render_template('trade.html')
 
                 order_response = _handle_option_trade(
+                    options_order_client=user_options_order,
                     option_symbol=option_symbol,
                     side=side,
                     quantity=quantity,
