@@ -142,6 +142,21 @@ class TestTrade(unittest.TestCase):
         self.assertIn(b'Invalid quantity. Quantity must be a positive integer.', response.data)
         self.mock_equity_order.assert_not_called()
 
+    def test_trade_invalid_string_quantity(self):
+        self.login()
+        response = self.client.post('/trade', data={
+            'trade_type': 'equity',
+            'symbol': 'aapl',
+            'side': 'buy',
+            'quantity': 'abc',
+            'order_type': 'market',
+            'duration': 'day',
+            'price': ''
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Invalid quantity. Quantity must be a positive integer.', response.data)
+        self.mock_equity_order.assert_not_called()
+
     def test_trade_missing_credentials(self):
         # Create a user without Tradier credentials
         no_cred_username = 'nocreduser'
