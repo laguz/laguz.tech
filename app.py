@@ -11,7 +11,7 @@ import concurrent.futures
 import requests
 import re
 import cachetools.func
-from uvatradier import Tradier, Account, Quotes, OptionsData, EquityOrder, OptionsOrder
+from uvatradier import Account, Quotes, OptionsData, EquityOrder, OptionsOrder
 from config import Config
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter import Limiter
@@ -44,7 +44,6 @@ tradier_live_trading = app.config['TRADIER_LIVE_TRADING']
 # Instantiate Tradier classes
 # Note: For production, ensure live_trade=True if you intend to place live trades.
 # For development/testing, keep live_trade=False or use the Tradier sandbox API.
-tradier_api_base = Tradier(tradier_account_id, tradier_access_token, live_trade=tradier_live_trading)
 tradier_account = Account(tradier_account_id, tradier_access_token, live_trade=tradier_live_trading)
 tradier_quotes = Quotes(tradier_account_id, tradier_access_token, live_trade=tradier_live_trading)
 tradier_options_data = OptionsData(tradier_account_id, tradier_access_token, live_trade=tradier_live_trading)
