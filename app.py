@@ -398,4 +398,4 @@ def manual_pnl_update():
 
 # --- Run the app ---
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, threaded=True, debug=app.config.get('DEBUG', False))
+    app.run(host='0.0.0.0', port=5000, threaded=True, debug=False)
