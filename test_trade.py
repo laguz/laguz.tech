@@ -11,7 +11,11 @@ os.environ['TRADIER_ACCESS_TOKEN'] = 'test_token'
 os.environ['TRADIER_ACCOUNT_ID'] = 'test_account'
 os.environ['TRADIER_LIVE_TRADING'] = 'false'
 
+import requests
 import app
+
+class MockRequestException(requests.exceptions.RequestException):
+    pass
 
 class TestTrade(unittest.TestCase):
     @classmethod
