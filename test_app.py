@@ -35,7 +35,7 @@ class TestApp(unittest.TestCase):
 
         # Add a test user
         self.test_username = 'testuser'
-        self.test_password = 'password123'
+        self.test_password = 'StrongPass123!'
         self.mock_users.insert_one({
             'username': self.test_username,
             'email': 'testuser@example.com',
@@ -84,7 +84,7 @@ class TestApp(unittest.TestCase):
         response = self.client.post('/register', data={
             'username': 'testuser',
             'email': 'test@example.com',
-            'password': 'password123',
+            'password': 'StrongPass123!',
             'confirm_password': 'password456'
         })
 

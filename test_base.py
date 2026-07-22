@@ -28,7 +28,7 @@ class BaseTestCase(unittest.TestCase):
 
         # Add a test user
         self.test_username = 'testuser'
-        self.test_password = 'password123'
+        self.test_password = 'StrongPass123!'
         self.user_id = self.mock_users.insert_one({
             'username': self.test_username,
             'email': 'testuser@example.com',

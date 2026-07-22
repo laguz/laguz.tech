@@ -32,7 +32,7 @@ class TestAuth(unittest.TestCase):
 
         # Add a test user
         self.test_username = 'testuser'
-        self.test_password = 'password123'
+        self.test_password = 'StrongPass123!'
         self.mock_users.insert_one({
             'username': self.test_username,
             'email': 'testuser@example.com',
@@ -110,7 +110,7 @@ class TestAuth(unittest.TestCase):
         response = self.client.post('/register', data={
             'username': 'newuser',
             'email': 'newuser@example.com',
-            'password': 'password123',
+            'password': 'StrongPass123!',
             'confirm_password': 'password456'
         }, follow_redirects=False)
 
@@ -118,6 +118,20 @@ class TestAuth(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         # Verify the flash message is present in the response
         self.assertIn(b'Passwords do not match!', response.data)
+
+    def test_register_weak_password(self):
+        # Test a weak password that does not meet complexity requirements
+        response = self.client.post('/register', data={
+            'username': 'newuser',
+            'email': 'newuser@example.com',
+            'password': 'weakpass',
+            'confirm_password': 'weakpass'
+        }, follow_redirects=False)
+
+        # Verify that registration fails and returns 200 OK (renders template again)
+        self.assertEqual(response.status_code, 200)
+        # Verify the flash message is present in the response
+        self.assertIn(b'Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, and a number.', response.data)
 
     def test_load_user_valid_id(self):
         # Test loading an existing user

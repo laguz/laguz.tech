@@ -9,6 +9,7 @@ from urllib.parse import urlparse, urljoin
 import concurrent.futures
 
 import requests
+import re
 import cachetools.func
 from uvatradier import Tradier, Account, Quotes, OptionsData, EquityOrder, OptionsOrder
 from config import Config
@@ -75,6 +76,17 @@ def is_safe_url(target):
     return test_url.scheme in ('http', 'https') and \
            ref_url.netloc == test_url.netloc
 
+def is_password_strong(password):
+    if len(password) < 8:
+        return False
+    if not re.search(r"[a-z]", password):
+        return False
+    if not re.search(r"[A-Z]", password):
+        return False
+    if not re.search(r"[0-9]", password):
+        return False
+    return True
+
 # --- Routes ---
 
 @app.route('/')
@@ -113,7 +125,11 @@ def register():
 
         if password != confirm_password:
             flash('Passwords do not match!', 'danger')
-            return render_template('register.html', username=username)
+            return render_template('register.html', username=username, email=email)
+
+        if not is_password_strong(password):
+            flash('Password must be at least 8 characters long and include an uppercase letter, a lowercase letter, and a number.', 'danger')
+            return render_template('register.html', username=username, email=email)
 
         existing_user = users_collection.find_one({'$or': [{'username': username}, {'email': email}]}, {'username': 1, 'email': 1})
         if existing_user:

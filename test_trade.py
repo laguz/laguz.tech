@@ -28,7 +28,7 @@ class TestTrade(unittest.TestCase):
         self.mock_trades = self.patcher_trades.start()
 
         self.test_username = 'testuser'
-        self.test_password = 'password123'
+        self.test_password = 'StrongPass123!'
         self.user_id = self.mock_users.insert_one({
             'username': self.test_username,
             'email': 'testuser@example.com',
@@ -145,7 +145,7 @@ class TestTrade(unittest.TestCase):
     def test_trade_missing_credentials(self):
         # Create a user without Tradier credentials
         no_cred_username = 'nocreduser'
-        no_cred_password = 'password123'
+        no_cred_password = 'StrongPass123!'
         self.mock_users.insert_one({
             'username': no_cred_username,
             'email': 'nocreduser@example.com',
